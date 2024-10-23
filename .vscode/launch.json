@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "MainClient",
+            "request": "launch",
+            "mainClass": "com.trabalho.client.MainClient",
+            "projectName": "app"
+        },
+        {
+            "type": "java",
+            "name": "MainServer",
+            "request": "launch",
+            "mainClass": "com.trabalho.server.MainServer",
+            "projectName": "app"
+        },
+        {
+            "type": "java",
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}"
