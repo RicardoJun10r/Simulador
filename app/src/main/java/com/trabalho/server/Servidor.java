@@ -17,7 +17,7 @@ public class Servidor {
      * topico[0] --> fila que recebe
      * topico[1] --> mandar para fila
      */
-    private String[] topico;
+    private final String[] TOPICO;
 
     private final String BROKER;
 
@@ -31,10 +31,10 @@ public class Servidor {
 
     public Servidor(String endereco_broker, Boolean debug) {
         scanner = new Scanner(System.in);
-        this.topico = new String[2];
+        this.TOPICO = new String[2];
         this.BROKER = endereco_broker;
-        this.topico[0] = "servidor";
-        this.topico[1] = "microcontrolador";
+        this.TOPICO[0] = "servidor";
+        this.TOPICO[1] = "microcontrolador";
         this.DEBUG = debug;
         FLAG = true;
         this.initClient();
@@ -48,7 +48,7 @@ public class Servidor {
             MqttConnectOptions opcoesDaConexao = new MqttConnectOptions();
             opcoesDaConexao.setCleanSession(true);
             opcoesDaConexao.setAutomaticReconnect(true);
-            opcoesDaConexao.setKeepAliveInterval(15);
+            opcoesDaConexao.setKeepAliveInterval(60);
             System.out.println("[*] Conectando-se ao broker " + BROKER);
             mqtt.connect(opcoesDaConexao);
             System.out.println("[*] Conectado: " + mqtt.isConnected());
@@ -72,7 +72,7 @@ public class Servidor {
                                 "\n\tMensagem: " + new String(mensagem.getPayload()) +
                                 "\n\tQoS:     " + mensagem.getQos() + "\n");
                     }
-                    // trava.countDown();
+                    trava.countDown();
                 }
 
                 public void connectionLost(Throwable causa) {
@@ -86,8 +86,8 @@ public class Servidor {
 
             });
 
-            System.out.println("[*] Inscrevendo cliente no tópico: " + topico[0]);
-            mqtt.subscribe(topico[0], 0);
+            System.out.println("[*] Inscrevendo cliente no tópico: " + TOPICO[0]);
+            mqtt.subscribe(TOPICO[0], 0);
             System.out.println("[*] Incrito!");
 
             try {
@@ -127,7 +127,7 @@ public class Servidor {
 
                 System.out.println("[*] Publicando mensagem: " + conteudo);
 
-                mqtt.publish(topico[1], mensagem);
+                mqtt.publish(TOPICO[1], mensagem);
 
                 System.out.println("[*] Mensagem publicada.");
             }

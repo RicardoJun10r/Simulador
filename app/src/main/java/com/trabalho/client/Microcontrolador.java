@@ -12,6 +12,9 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import com.trabalho.salaAula.Sala;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 public class Microcontrolador {
 
     private final String ID;
@@ -30,6 +33,8 @@ public class Microcontrolador {
 
     private static MqttClient mqtt;
 
+    private Executor executor;
+
     public Microcontrolador(String id, String endereco_broker, Sala sala, Boolean debug) {
         this.TOPICO = new String[2];
         this.BROKER = endereco_broker;
@@ -39,6 +44,7 @@ public class Microcontrolador {
         this.DEBUG = debug;
         this.SALA = sala;
         this.initClient();
+        this.executor = Executors.newSingleThreadExecutor();
     }
 
     private void initClient(){
@@ -49,7 +55,7 @@ public class Microcontrolador {
             MqttConnectOptions opcoesDaConexao = new MqttConnectOptions();
             opcoesDaConexao.setCleanSession(true);
             opcoesDaConexao.setAutomaticReconnect(true);
-            opcoesDaConexao.setKeepAliveInterval(15);
+            opcoesDaConexao.setKeepAliveInterval(60);
             System.out.println("[*] Conectando-se ao broker " + BROKER);
             mqtt.connect(opcoesDaConexao);
             System.out.println("[*] Conectado: " + mqtt.isConnected());
@@ -85,14 +91,20 @@ public class Microcontrolador {
                         response.setQos(0);
          
                         System.out.println("[*] Publicando mensagem: " + conteudo);
-      
-                        mqtt.publish(TOPICO[1], response);
+                        
+                        executor.execute(() -> {
+                            try {
+                                mqtt.publish(TOPICO[1], response);
+                            } catch (MqttException e) {
+                                e.printStackTrace();
+                            }
+
+                        });
          
                         System.out.println("[*] Mensagem publicada.");
-         
-                    }
 
-                    // trava.countDown();
+                    }
+                    trava.countDown();
                 }
 
                 public void connectionLost(Throwable causa) {
@@ -119,7 +131,7 @@ public class Microcontrolador {
             System.out.println("[*] Finalizando...");
 
             System.exit(0);
-            mqtt.close();
+            // mqtt.close();
         } catch (MqttException me) {
 
             throw new RuntimeException(me);
