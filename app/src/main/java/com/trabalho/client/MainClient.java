@@ -6,6 +6,6 @@ public class MainClient {
     public static void main(String[] args) {
         Sala sala = new Sala(2);
         sala.preencher();
-        new Microcontrolador("1", "tcp://mqtt.eclipseprojects.io:1882", sala, true).start();
+        new Microcontrolador("1", "tcp://mqtt.eclipseprojects.io:1883", sala, true).start();
     }
 }

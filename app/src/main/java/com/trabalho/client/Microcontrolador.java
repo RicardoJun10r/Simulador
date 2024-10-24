@@ -1,9 +1,7 @@
 package com.trabalho.client;
 
 import java.sql.Timestamp;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -14,7 +12,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import com.trabalho.salaAula.Sala;
 
-public class Microcontrolador implements Runnable {
+public class Microcontrolador {
 
     private final String ID;
 
@@ -22,62 +20,78 @@ public class Microcontrolador implements Runnable {
      * topico[0] --> fila que recebe
      * topico[1] --> mandar para fila
      */
-    private String[] topico;
+    private final String[] TOPICO;
 
-    /**
-     * broker[0] --> fila que recebe
-     * broker[1] --> mandar para fila
-     */
-    private String[] broker;
+    private final String BROKER;
 
     private final Boolean DEBUG;
 
     private final Sala SALA;
 
-    private final BlockingQueue<String> comando;
+    private static MqttClient mqtt;
 
-    private static Boolean FLAG;
-
-    public Microcontrolador(String id, String broker_servidor, Sala sala, Boolean debug) {
-        this.comando = new LinkedBlockingQueue<>();
-        this.broker = new String[2];
-        this.topico = new String[2];
-        this.broker[0] = "tcp://mqtt.eclipseprojects.io:1883";
-        this.broker[1] = broker_servidor;
-        this.topico[0] = "microcontrolador";
-        this.topico[1] = "servidor";
+    public Microcontrolador(String id, String endereco_broker, Sala sala, Boolean debug) {
+        this.TOPICO = new String[2];
+        this.BROKER = endereco_broker;
+        this.TOPICO[0] = "microcontrolador";
+        this.TOPICO[1] = "servidor";
         this.ID = id;
         this.DEBUG = debug;
         this.SALA = sala;
-        FLAG = true;
+        this.initClient();
+    }
+
+    private void initClient(){
+        try {
+            String idCliente = MqttClient.generateClientId();
+            System.out.println("[*] ID do Cliente: " + idCliente);
+            mqtt = new MqttClient(BROKER, idCliente);
+            MqttConnectOptions opcoesDaConexao = new MqttConnectOptions();
+            opcoesDaConexao.setCleanSession(true);
+            opcoesDaConexao.setAutomaticReconnect(true);
+            opcoesDaConexao.setKeepAliveInterval(15);
+            System.out.println("[*] Conectando-se ao broker " + BROKER);
+            mqtt.connect(opcoesDaConexao);
+            System.out.println("[*] Conectado: " + mqtt.isConnected());
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void initQueue() {
         try {
-            String idCliente = MqttClient.generateClientId();
-            System.out.println("[*] ID do Cliente: " + idCliente);
-            MqttClient clienteMqtt = new MqttClient(broker[0], idCliente);
-
-            MqttConnectOptions opcoesDaConexao = new MqttConnectOptions();
-            opcoesDaConexao.setCleanSession(true);
-
-            System.out.println("[*] Conectando-se ao broker " + broker);
-            clienteMqtt.connect(opcoesDaConexao);
-            System.out.println("[*] Conectado!");
 
             final CountDownLatch trava = new CountDownLatch(20);
 
-            clienteMqtt.setCallback((MqttCallback) new MqttCallback() {
+            mqtt.setCallback((MqttCallback) new MqttCallback() {
                 public void messageArrived(String topico, MqttMessage mensagem) throws Exception {
                     String time = new Timestamp(System.currentTimeMillis()).toString();
+                    String conteudo = new String(mensagem.getPayload());
                     if(DEBUG){
                         System.out.println("\nUma mensagem foi recebida!" +
                                 "\n\tData/Hora:    " + time +
                                 "\n\tTópico:   " + topico +
-                                "\n\tMensagem: " + new String(mensagem.getPayload()) +
+                                "\n\tMensagem: " + conteudo +
                                 "\n\tQoS:     " + mensagem.getQos() + "\n");
                     }
-                    comando.add(new String(mensagem.getPayload()));
+                    System.out.println("Adicionando Mensagem...");
+
+                    if(validar(conteudo.split("\\.")[0])){
+                        conteudo = processarComando(conteudo);
+                        
+                        MqttMessage response = new MqttMessage(conteudo.getBytes());
+         
+                        response.setQos(0);
+         
+                        System.out.println("[*] Publicando mensagem: " + conteudo);
+      
+                        mqtt.publish(TOPICO[1], response);
+         
+                        System.out.println("[*] Mensagem publicada.");
+         
+                    }
+
                     // trava.countDown();
                 }
 
@@ -91,8 +105,8 @@ public class Microcontrolador implements Runnable {
                 }
 
             });
-            System.out.println("[*] Inscrevendo cliente no tópico: " + topico[0]);
-            clienteMqtt.subscribe(topico[0], 0);
+            System.out.println("[*] Inscrevendo cliente no tópico: " + TOPICO[0]);
+            mqtt.subscribe(TOPICO[0], 0);
             System.out.println("[*] Incrito!");
 
             try {
@@ -101,11 +115,11 @@ public class Microcontrolador implements Runnable {
                 System.out.println("[*] Me acordaram enquanto eu esperava zzzzz");
             }
 
-            clienteMqtt.disconnect();
+            mqtt.disconnect();
             System.out.println("[*] Finalizando...");
 
             System.exit(0);
-            clienteMqtt.close();
+            mqtt.close();
         } catch (MqttException me) {
 
             throw new RuntimeException(me);
@@ -137,66 +151,8 @@ public class Microcontrolador implements Runnable {
         }
     }
 
-    private void sendQueue() {
-
-        System.out.println("[*] Inicializando um publisher...");
-
-        try {
-
-            String idCliente = MqttClient.generateClientId();
-            System.out.println("[*] ID do Cliente: " + idCliente);
-            MqttClient clienteMqtt = new MqttClient(broker[1], idCliente);
-            MqttConnectOptions opcoesConexao = new MqttConnectOptions();
-            opcoesConexao.setCleanSession(true);
-
-            System.out.println("[*] Conectando-se ao broker " + broker);
-            clienteMqtt.connect(opcoesConexao);
-            System.out.println("[*] Conectado: " + clienteMqtt.isConnected());
-
-            while (FLAG) {
-                String conteudo;
-                try {
-                    conteudo = this.comando.take();
-                    if(validar(conteudo.split("\\.")[0])){
-                        conteudo = processarComando(conteudo);
-                        
-                        MqttMessage mensagem = new MqttMessage(conteudo.getBytes());
-        
-                        mensagem.setQos(0);
-        
-                        System.out.println("[*] Publicando mensagem: " + conteudo);
-    
-                        clienteMqtt.publish(topico[1], mensagem);
-        
-                        System.out.println("[*] Mensagem publicada.");
-        
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            clienteMqtt.disconnect();
-            System.exit(0);
-            clienteMqtt.close();
-
-        } catch (MqttException me) {
-
-            System.out.println("razão " + me.getReasonCode());
-            System.out.println("msg " + me.getMessage());
-            System.out.println("loc " + me.getLocalizedMessage());
-            System.out.println("cause " + me.getCause());
-            System.out.println("excep " + me);
-        }
-    }
-
     public void start() {
         this.initQueue();
-        new Thread(this).start();
-    }
-    
-    @Override
-    public void run() {
-        this.sendQueue();
     }
 
 }

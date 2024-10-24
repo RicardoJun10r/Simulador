@@ -11,7 +11,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-public class Servidor implements Runnable {
+public class Servidor {
 
     /**
      * topico[0] --> fila que recebe
@@ -19,11 +19,7 @@ public class Servidor implements Runnable {
      */
     private String[] topico;
 
-    /**
-     * broker[0] --> fila que recebe
-     * broker[1] --> mandar para fila
-     */
-    private String[] broker;
+    private final String BROKER;
 
     private final Boolean DEBUG;
 
@@ -31,34 +27,42 @@ public class Servidor implements Runnable {
 
     private static Scanner scanner;
 
-    public Servidor(String broker_servidor, Boolean debug) {
+    private static MqttClient mqtt;
+
+    public Servidor(String endereco_broker, Boolean debug) {
         scanner = new Scanner(System.in);
-        this.broker = new String[2];
         this.topico = new String[2];
-        this.broker[0] = broker_servidor;
-        this.broker[1] = "tcp://mqtt.eclipseprojects.io:1883";
+        this.BROKER = endereco_broker;
         this.topico[0] = "servidor";
         this.topico[1] = "microcontrolador";
         this.DEBUG = debug;
         FLAG = true;
+        this.initClient();
     }
-
-    private void initQueue() {
+    
+    private void initClient(){
         try {
             String idCliente = MqttClient.generateClientId();
             System.out.println("[*] ID do Cliente: " + idCliente);
-            MqttClient clienteMqtt = new MqttClient(broker[0], idCliente);
-
+            mqtt = new MqttClient(BROKER, idCliente);
             MqttConnectOptions opcoesDaConexao = new MqttConnectOptions();
             opcoesDaConexao.setCleanSession(true);
+            opcoesDaConexao.setAutomaticReconnect(true);
+            opcoesDaConexao.setKeepAliveInterval(15);
+            System.out.println("[*] Conectando-se ao broker " + BROKER);
+            mqtt.connect(opcoesDaConexao);
+            System.out.println("[*] Conectado: " + mqtt.isConnected());
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
 
-            System.out.println("[*] Conectando-se ao broker " + broker);
-            clienteMqtt.connect(opcoesDaConexao);
-            System.out.println("[*] Conectado!");
-
+    }
+    
+    private void initQueue() {
+        try {
             final CountDownLatch trava = new CountDownLatch(20);
-
-            clienteMqtt.setCallback((MqttCallback) new MqttCallback() {
+            
+            mqtt.setCallback((MqttCallback) new MqttCallback() {
                 public void messageArrived(String topico, MqttMessage mensagem) throws Exception {
                     String time = new Timestamp(System.currentTimeMillis()).toString();
                     if (DEBUG) {
@@ -68,11 +72,11 @@ public class Servidor implements Runnable {
                                 "\n\tMensagem: " + new String(mensagem.getPayload()) +
                                 "\n\tQoS:     " + mensagem.getQos() + "\n");
                     }
-                    trava.countDown();
+                    // trava.countDown();
                 }
 
                 public void connectionLost(Throwable causa) {
-                    System.out.println("Conexão com o broker foi perdida!" + causa.getMessage());
+                    System.out.println("[*] Conexão com o broker foi perdida!" + causa.getMessage());
                     trava.countDown();
                 }
 
@@ -83,7 +87,7 @@ public class Servidor implements Runnable {
             });
 
             System.out.println("[*] Inscrevendo cliente no tópico: " + topico[0]);
-            clienteMqtt.subscribe(topico[0], 0);
+            mqtt.subscribe(topico[0], 0);
             System.out.println("[*] Incrito!");
 
             try {
@@ -92,15 +96,14 @@ public class Servidor implements Runnable {
                 System.out.println("[*] Me acordaram enquanto eu esperava zzzzz");
             }
 
-            clienteMqtt.disconnect();
+            mqtt.disconnect();
             System.out.println("[*] Finalizando...");
 
             System.exit(0);
-            clienteMqtt.close();
+            mqtt.close();
+
         } catch (MqttException me) {
-
             throw new RuntimeException(me);
-
         }
     }
 
@@ -109,16 +112,6 @@ public class Servidor implements Runnable {
         System.out.println("[*] Inicializando um publisher...");
 
         try {
-
-            String idCliente = MqttClient.generateClientId();
-            System.out.println("[*] ID do Cliente: " + idCliente);
-            MqttClient clienteMqtt = new MqttClient(broker[1], idCliente);
-            MqttConnectOptions opcoesConexao = new MqttConnectOptions();
-            opcoesConexao.setCleanSession(true);
-
-            System.out.println("[*] Conectando-se ao broker " + broker);
-            clienteMqtt.connect(opcoesConexao);
-            System.out.println("[*] Conectado: " + clienteMqtt.isConnected());
 
             while (FLAG) {
                 String conteudo;
@@ -134,13 +127,13 @@ public class Servidor implements Runnable {
 
                 System.out.println("[*] Publicando mensagem: " + conteudo);
 
-                clienteMqtt.publish(topico[1], mensagem);
+                mqtt.publish(topico[1], mensagem);
 
                 System.out.println("[*] Mensagem publicada.");
             }
-            clienteMqtt.disconnect();
+            mqtt.disconnect();
             System.exit(0);
-            clienteMqtt.close();
+            mqtt.close();
 
         } catch (MqttException me) {
 
@@ -153,13 +146,12 @@ public class Servidor implements Runnable {
     }
 
     public void start() {
-        this.sendQueue();
-        new Thread(this).start();
-    }
-
-    @Override
-    public void run() {
-        this.initQueue();
+        new Thread(() -> {
+            this.sendQueue();
+        }).start();
+        new Thread(() -> {
+            this.initQueue();
+        }).start();
     }
 
 }
