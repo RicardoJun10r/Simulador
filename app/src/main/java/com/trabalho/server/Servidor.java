@@ -2,24 +2,11 @@ package com.trabalho.server;
 
 import java.sql.Timestamp;
 import java.util.Scanner;
-import java.util.concurrent.CountDownLatch;
 
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import com.trabalho.broker.BrokerQueue;
+import com.trabalho.broker.IBrokerQueue;
 
 public class Servidor {
-
-    /**
-     * topico[0] --> fila que recebe
-     * topico[1] --> mandar para fila
-     */
-    private final String[] TOPICO;
-
-    private final String BROKER;
 
     private final Boolean DEBUG;
 
@@ -27,122 +14,47 @@ public class Servidor {
 
     private static Scanner scanner;
 
-    private static MqttClient mqtt;
+    private BrokerQueue broker;
+
+    private IBrokerQueue listen_method;
 
     public Servidor(String endereco_broker, Boolean debug) {
         scanner = new Scanner(System.in);
-        this.TOPICO = new String[2];
-        this.BROKER = endereco_broker;
-        this.TOPICO[0] = "servidor";
-        this.TOPICO[1] = "microcontrolador";
+        String[] TOPICO = { "servidor", "microcontrolador" };
         this.DEBUG = debug;
         FLAG = true;
-        this.initClient();
-    }
-    
-    private void initClient(){
-        try {
-            String idCliente = MqttClient.generateClientId();
-            System.out.println("[*] ID do Cliente: " + idCliente);
-            mqtt = new MqttClient(BROKER, idCliente);
-            MqttConnectOptions opcoesDaConexao = new MqttConnectOptions();
-            opcoesDaConexao.setCleanSession(true);
-            opcoesDaConexao.setAutomaticReconnect(true);
-            opcoesDaConexao.setKeepAliveInterval(60);
-            System.out.println("[*] Conectando-se ao broker " + BROKER);
-            mqtt.connect(opcoesDaConexao);
-            System.out.println("[*] Conectado: " + mqtt.isConnected());
-        } catch (MqttException e) {
-            e.printStackTrace();
-        }
-
-    }
-    
-    private void initQueue() {
-        try {
-            final CountDownLatch trava = new CountDownLatch(20);
-            
-            mqtt.setCallback((MqttCallback) new MqttCallback() {
-                public void messageArrived(String topico, MqttMessage mensagem) throws Exception {
-                    String time = new Timestamp(System.currentTimeMillis()).toString();
-                    if (DEBUG) {
-                        System.out.println("\nUma mensagem foi recebida!" +
-                                "\n\tData/Hora:    " + time +
-                                "\n\tTópico:   " + topico +
-                                "\n\tMensagem: " + new String(mensagem.getPayload()) +
-                                "\n\tQoS:     " + mensagem.getQos() + "\n");
-                    }
-                    trava.countDown();
-                }
-
-                public void connectionLost(Throwable causa) {
-                    System.out.println("[*] Conexão com o broker foi perdida!" + causa.getMessage());
-                    trava.countDown();
-                }
-
-                public void deliveryComplete(IMqttDeliveryToken token) {
-
-                }
-
-            });
-
-            System.out.println("[*] Inscrevendo cliente no tópico: " + TOPICO[0]);
-            mqtt.subscribe(TOPICO[0], 0);
-            System.out.println("[*] Incrito!");
-
-            try {
-                trava.await();
-            } catch (InterruptedException e) {
-                System.out.println("[*] Me acordaram enquanto eu esperava zzzzz");
+        this.broker = new BrokerQueue(endereco_broker, TOPICO, 0);
+        this.listen_method = (topico, mensagem) -> {
+            String time = new Timestamp(System.currentTimeMillis()).toString();
+            if (DEBUG) {
+                System.out.println("\nUma mensagem foi recebida!" +
+                        "\n\tData/Hora:    " + time +
+                        "\n\tTópico:   " + topico +
+                        "\n\tMensagem: " + new String(mensagem.getPayload()) +
+                        "\n\tQoS:     " + mensagem.getQos() + "\n");
             }
-
-            mqtt.disconnect();
-            System.out.println("[*] Finalizando...");
-
-            System.exit(0);
-            mqtt.close();
-
-        } catch (MqttException me) {
-            throw new RuntimeException(me);
-        }
+        };
+        this.broker.setListen(listen_method);
     }
 
     private void sendQueue() {
 
         System.out.println("[*] Inicializando um publisher...");
 
-        try {
+        while (FLAG) {
+            String conteudo;
+            System.out.println("Digite o ID:");
+            conteudo = scanner.next() + ".";
 
-            while (FLAG) {
-                String conteudo;
-                System.out.println("Digite o ID:");
-                conteudo = scanner.next() + ".";
+            System.out.println("Digite a operação:");
 
-                System.out.println("Digite a operação:");
-                conteudo += scanner.next();
+            conteudo += scanner.next();
 
-                MqttMessage mensagem = new MqttMessage(conteudo.getBytes());
+            this.broker.sendMessage(1, conteudo);
 
-                mensagem.setQos(0);
-
-                System.out.println("[*] Publicando mensagem: " + conteudo);
-
-                mqtt.publish(TOPICO[1], mensagem);
-
-                System.out.println("[*] Mensagem publicada.");
-            }
-            mqtt.disconnect();
-            System.exit(0);
-            mqtt.close();
-
-        } catch (MqttException me) {
-
-            System.out.println("razão " + me.getReasonCode());
-            System.out.println("msg " + me.getMessage());
-            System.out.println("loc " + me.getLocalizedMessage());
-            System.out.println("cause " + me.getCause());
-            System.out.println("excep " + me);
+            System.out.println("[*] Mensagem publicada.");
         }
+        this.broker.close();
     }
 
     public void start() {
@@ -150,7 +62,7 @@ public class Servidor {
             this.sendQueue();
         }).start();
         new Thread(() -> {
-            this.initQueue();
+            this.broker.start();
         }).start();
     }
 
