@@ -91,7 +91,7 @@ public class Microcontrolador {
                         response.setQos(0);
          
                         System.out.println("[*] Publicando mensagem: " + conteudo);
-                        
+
                         executor.execute(() -> {
                             try {
                                 mqtt.publish(TOPICO[1], response);
@@ -131,7 +131,7 @@ public class Microcontrolador {
             System.out.println("[*] Finalizando...");
 
             System.exit(0);
-            // mqtt.close();
+            mqtt.close();
         } catch (MqttException me) {
 
             throw new RuntimeException(me);
@@ -140,7 +140,7 @@ public class Microcontrolador {
     }
 
     private Boolean validar(String id) {
-        if (id.equals(this.ID))
+        if (id.equals(this.ID) || id.equals("-1"))
             return true;
         else
             return false;
@@ -149,13 +149,13 @@ public class Microcontrolador {
     private String processarComando(String conteudo) {
         int op = Integer.parseInt(conteudo.split("\\.")[1]);
         switch (op) {
-            case 0, 4: {
+            case 0: {
                 return this.SALA.desligarAparelhos();
             }
-            case 1, 3: {
+            case 1: {
                 return this.SALA.ligarAparelhos();
             }
-            case 2, 5: {
+            case 2: {
                 return this.SALA.mostrarAparelhos();
             }
             default:
