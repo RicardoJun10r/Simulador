@@ -74,77 +74,87 @@ public class Servidor {
         }
 
         this.executor.execute(() -> {
-            while (true) {
-                try {
-                    ClientSocket socket = new ClientSocket(this.serverSocket.accept(), DEBUG);
-                    add(hash(socket.getPort()), socket);
-                    this.executor.execute(() -> {
-                        this.listen(socket);
-                    });
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            serverLoop();
         });
 
         this.executor.execute(() -> {
-            Integer op, microcontrolador, server, id_server, id_microcontrolador, porta;
-            String endereco;
-            do {
-                MenuInterface.mostrarOpcoes();
-                op = scanner.nextInt();
-                switch (op) {
-                    case 0: {
-                        MenuInterface.microcontroladorOpcoes();
-                        microcontrolador = scanner.nextInt();
-                        System.out.println("ID DO MICROCONTROLADOR OU (-1):");
-                        id_microcontrolador = scanner.nextInt();
-                        this.broker.sendMessage(1, (id_microcontrolador + "." + microcontrolador));
-                        System.out.println("[*] Mensagem publicada.");
-                        break;
-                    }
-                    case 1: {
-                        MenuInterface.controlarServer();
-                        server = scanner.nextInt();
-                        System.out.println("ID DO SERVER:");
-                        id_server = scanner.nextInt();
-                        if (server <= 2) {
-                            System.out.println("ID DO MICROCONTROLADOR:");
-                            id_microcontrolador = scanner.nextInt();
-                            unicast(id_server, new ServerReq(this.HOST, this.PORTA, "fwd", "SERVIDOR", server,
-                                    id_microcontrolador));
-                        } else {
-                            unicast(id_server, new ServerReq(this.HOST, this.PORTA, "fwd", "SERVIDOR", server, -1));
-                        }
-                        break;
-                    }
-                    case 2: {
-                        this.USUARIOS.forEach((id, socket) -> {
-                            System.out.println(id + ": " + socket.getSocketAddress().toString());
-                        });
-                        break;
-                    }
-                    case 3: {
-                        System.out.println("DIGITE O ENDEREÇO:");
-                        endereco = scanner.next();
-                        System.out.println("DIGITE A PORTA:");
-                        porta = scanner.nextInt();
-                        try {
-                            add(hash(porta), new ClientSocket(new Socket(endereco, porta), DEBUG));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    }
-                    default: {
-                        System.out.println("ENTRADA INVÁLIDA");
-                        break;
-                    }
-                }
-
-            } while (op != -1);
+            painel();
         });
 
+    }
+
+    private void serverLoop() {
+        while (true) {
+            try {
+                ClientSocket socket = new ClientSocket(this.serverSocket.accept(), DEBUG);
+                add(hash(socket.getPort()), socket);
+                this.executor.execute(() -> {
+                    this.listen(socket);
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void painel() {
+        Integer op, microcontrolador, server, id_server, id_microcontrolador, porta;
+        String endereco;
+        do {
+            MenuInterface.mostrarOpcoes();
+            op = scanner.nextInt();
+            switch (op) {
+                case 0: {
+                    MenuInterface.microcontroladorOpcoes();
+                    microcontrolador = scanner.nextInt();
+                    System.out.println("ID DO MICROCONTROLADOR OU (-1):");
+                    id_microcontrolador = scanner.nextInt();
+                    this.broker.sendMessage(1, (id_microcontrolador + "." + microcontrolador));
+                    System.out.println("[*] Mensagem publicada.");
+                    break;
+                }
+                case 1: {
+                    MenuInterface.controlarServer();
+                    server = scanner.nextInt();
+                    System.out.println("ID DO SERVER:");
+                    id_server = scanner.nextInt();
+                    if (server <= 2) {
+                        System.out.println("ID DO MICROCONTROLADOR:");
+                        id_microcontrolador = scanner.nextInt();
+                        unicast(id_server, new ServerReq(this.HOST, this.PORTA, "fwd", "SERVIDOR", server,
+                                id_microcontrolador));
+                    } else {
+                        unicast(id_server, new ServerReq(this.HOST, this.PORTA, "fwd", "SERVIDOR", server, -1));
+                    }
+                    break;
+                }
+                case 2: {
+                    this.USUARIOS.forEach((id, socket) -> {
+                        System.out.println(id + ": " + socket.getSocketAddress().toString());
+                    });
+                    break;
+                }
+                case 3: {
+                    System.out.println("DIGITE O ENDEREÇO:");
+                    endereco = scanner.next();
+                    System.out.println("DIGITE A PORTA:");
+                    porta = scanner.nextInt();
+                    try {
+                        ClientSocket novo = new ClientSocket(new Socket(endereco, porta), DEBUG);
+                        add(hash(porta), novo);
+                        novo.send(new ServerReq(this.HOST, this.PORTA, "handshake", "endereco", 0, 0));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                }
+                default: {
+                    System.out.println("ENTRADA INVÁLIDA");
+                    break;
+                }
+            }
+
+        } while (op != -1);
     }
 
     private void unicast(Integer id, ServerReq msg) {
@@ -160,8 +170,16 @@ public class Servidor {
                             + cliente_socket.getPort() + "]: " + line.toString());
                 }
                 if (line.getHeaders().equalsIgnoreCase("handshake")) {
-                    add(hash(cliente_socket.getPort()), cliente_socket);
-                    cliente_socket.send(new ServerReq(this.HOST, line.getPorta(), "response", "", -1, -1));
+                    ClientSocket novo;
+                    try {
+                        System.out.println("Adicionando");
+                        novo = new ClientSocket(new Socket(line.getEndereco(), line.getPorta()), DEBUG);
+                        add(hash(novo.getPort()), novo);
+                        System.out.println("Enviando");
+                        novo.send(new ServerReq(this.HOST, this.PORTA, "response", "", 0, 0));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
