@@ -71,13 +71,13 @@ public class Microcontrolador {
     private String processarComando(String conteudo) {
         int op = Integer.parseInt(conteudo.split("\\.")[1]);
         switch (op) {
-            case 0: {
+            case 0, 4: {
                 return this.SALA.desligarAparelhos();
             }
-            case 1: {
+            case 1, 3: {
                 return this.SALA.ligarAparelhos();
             }
-            case 2: {
+            case 2, 5: {
                 return this.SALA.mostrarAparelhos();
             }
             default:
