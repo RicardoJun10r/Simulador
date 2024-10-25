@@ -44,12 +44,13 @@ public class Microcontrolador {
             System.out.println("Adicionando Mensagem...");
 
             if(validar(conteudo.split("\\.")[0])){
+
+                String porta = conteudo.split("\\.")[2];
+
                 conteudo = processarComando(conteudo);
 
-                String response = conteudo;
+                String response = conteudo + "." + porta;
  
-                System.out.println("[*] Publicando mensagem: " + conteudo);
-
                 executor.execute(() -> {
                     broker.sendMessage(1, response);
                 });

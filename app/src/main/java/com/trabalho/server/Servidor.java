@@ -109,7 +109,7 @@ public class Servidor {
                     microcontrolador = scanner.nextInt();
                     System.out.println("ID DO MICROCONTROLADOR OU (-1):");
                     id_microcontrolador = scanner.nextInt();
-                    this.broker.sendMessage(1, (id_microcontrolador + "." + microcontrolador));
+                    this.broker.sendMessage(1, (id_microcontrolador + "." + microcontrolador + "." + this.PORTA));
                     System.out.println("[*] Mensagem publicada.");
                     break;
                 }
@@ -118,14 +118,10 @@ public class Servidor {
                     server = scanner.nextInt();
                     System.out.println("ID DO SERVER:");
                     id_server = scanner.nextInt();
-                    if (server <= 2) {
-                        System.out.println("ID DO MICROCONTROLADOR:");
-                        id_microcontrolador = scanner.nextInt();
-                        unicast(id_server, new ServerReq(this.HOST, this.PORTA, "fwd", "SERVIDOR", server,
-                                id_microcontrolador));
-                    } else {
-                        unicast(id_server, new ServerReq(this.HOST, this.PORTA, "fwd", "SERVIDOR", server, -1));
-                    }
+                    System.out.println("ID DO MICROCONTROLADOR OU (-1):");
+                    id_microcontrolador = scanner.nextInt();
+                    unicast(id_server, new ServerReq(this.HOST, this.PORTA, "request", "SERVIDOR", server,
+                            id_microcontrolador));
                     break;
                 }
                 case 2: {
@@ -142,7 +138,7 @@ public class Servidor {
                     try {
                         ClientSocket novo = new ClientSocket(new Socket(endereco, porta), DEBUG);
                         add(hash(porta), novo);
-                        novo.send(new ServerReq(this.HOST, this.PORTA, "handshake", "endereco", 0, 0));
+                        novo.send(new ServerReq(this.HOST, this.PORTA, "handshake", "", 0, 0));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -170,16 +166,25 @@ public class Servidor {
                             + cliente_socket.getPort() + "]: " + line.toString());
                 }
                 if (line.getHeaders().equalsIgnoreCase("handshake")) {
-                    ClientSocket novo;
-                    try {
-                        System.out.println("Adicionando");
-                        novo = new ClientSocket(new Socket(line.getEndereco(), line.getPorta()), DEBUG);
-                        add(hash(novo.getPort()), novo);
-                        System.out.println("Enviando");
-                        novo.send(new ServerReq(this.HOST, this.PORTA, "response", "", 0, 0));
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    if (this.USUARIOS.containsKey(hash(line.getPorta()))) {
+                        this.USUARIOS.get(hash(line.getPorta()))
+                                .send(new ServerReq(this.HOST, this.PORTA, "response", "Servidor já adicionado", 0, 0));
+                    } else {
+                        ClientSocket novo;
+                        try {
+                            System.out.println("Adicionando");
+                            novo = new ClientSocket(new Socket(line.getEndereco(), line.getPorta()), DEBUG);
+                            add(hash(novo.getPort()), novo);
+                            System.out.println("Enviando");
+                            novo.send(new ServerReq(this.HOST, this.PORTA, "response", "Conexão realizada!", 0, 0));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
+                }
+                if(line.getHeaders().equals("request")){
+                    String req = line.getMicrocontrolador_id() + "." + line.getOpcao() + "." + line.getPorta();
+                    this.broker.sendMessage(1, req);
                 }
             }
         }
@@ -187,12 +192,19 @@ public class Servidor {
 
     private void listenMethod() {
         this.listen_method = (topico, mensagem) -> {
+            String response = new String(mensagem.getPayload());
+
             if (DEBUG) {
                 System.out.println("\nUma mensagem foi recebida!" +
                         "\n\tData/Hora:    " + new Timestamp(System.currentTimeMillis()).toString() +
                         "\n\tTópico:   " + topico +
-                        "\n\tMensagem: " + new String(mensagem.getPayload()) +
+                        "\n\tMensagem: " + response +
                         "\n\tQoS:     " + mensagem.getQos() + "\n");
+            }
+
+            if (!(response.split("\\.")[1].equals(String.valueOf(this.PORTA)))) {
+                this.USUARIOS.get(hash(Integer.parseInt(response.split("\\.")[1])))
+                        .send(new ServerReq(this.HOST, this.PORTA, "response", response, -1, -1));
             }
         };
         this.broker.setListen(listen_method);

@@ -55,9 +55,7 @@ public class BrokerQueue {
             return;
         }
         try {
-
             final CountDownLatch trava = new CountDownLatch(20);
-
             mqtt.setCallback((MqttCallback) new MqttCallback() {
                 public void messageArrived(String topico, MqttMessage mensagem) throws Exception {
                     listen_method.listen(topico, mensagem);
@@ -85,9 +83,7 @@ public class BrokerQueue {
             }
             this.close();
         } catch (MqttException me) {
-
             throw new RuntimeException(me);
-
         }
     }
 
