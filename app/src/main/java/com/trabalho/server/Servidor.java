@@ -19,6 +19,9 @@ import com.trabalho.shared.Comando;
 import com.trabalho.shared.ServerReq;
 import com.trabalho.util.ClientSocket;
 
+import javafx.application.Platform;
+import javafx.scene.control.TextArea;
+
 public class Servidor {
 
     private final Boolean DEBUG;
@@ -39,9 +42,11 @@ public class Servidor {
 
     private final Integer N_THREADS = 6;
 
-    private BlockingQueue<Comando> comandos = new LinkedBlockingQueue<>(); 
+    private BlockingQueue<Comando> comandos = new LinkedBlockingQueue<>();
 
-    public Servidor(String host, int porta, String endereco_broker, Boolean debug) {
+    private TextArea responses;
+
+    public Servidor(String host, int porta, String endereco_broker, Boolean debug, TextArea responses) {
         this.HOST = host;
         this.PORTA = porta;
         String[] TOPICO = { "servidor", "microcontrolador" };
@@ -49,6 +54,7 @@ public class Servidor {
         this.DEBUG = debug;
         this.listenMethod();
         this.executor = Executors.newFixedThreadPool(N_THREADS);
+        this.responses = responses;
     }
 
     public Servidor(String host, int porta, Boolean debug) {
@@ -184,6 +190,10 @@ public class Servidor {
                 if(line.getHeaders().equals("request")){
                     String req = line.getMicrocontrolador_id() + "." + line.getOpcao() + "." + line.getPorta();
                     this.broker.sendMessage(1, req);
+                }
+                if(line.getHeaders().equals("response")){
+                    final String receivedLine = responses.getText() + "\n" + line.getMensagem();
+                    Platform.runLater(() -> responses.setText(receivedLine));
                 }
             }
         }

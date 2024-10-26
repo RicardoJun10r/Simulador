@@ -6,7 +6,10 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -16,6 +19,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -38,7 +42,6 @@ import javafx.stage.Stage;
 public class App extends Application {
 
     private Circle statusCircle;
-    private Circle filaStatusCircle;
     private Label addressPortLabel;
     private Servidor servidor;
     private TextArea responses;
@@ -46,16 +49,14 @@ public class App extends Application {
     private int porta;
 
     private ObservableList<Device> conexoesList = FXCollections.observableArrayList();
-    private ObservableList<Appliance> dispositivosList = FXCollections.observableArrayList();
-
-    private TableView<Device> tabela_conexoes;
-    private TableView<Appliance> tabela_dispositivos;
+    private ObservableList<Topic> topicsList = FXCollections.observableArrayList();
+    private ObservableList<Status> statusList = FXCollections.observableArrayList();
 
     @Override
     public void start(Stage primaryStage) {
         BorderPane root = new BorderPane();
 
-        // AppBar no topo
+        // AppBar at the top
         BorderPane appBar = new BorderPane();
         appBar.setPadding(new Insets(10));
         appBar.setStyle("-fx-background-color: #f0f0f0;");
@@ -64,7 +65,6 @@ public class App extends Application {
         titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
         statusCircle = new Circle(10, Color.RED);
-        filaStatusCircle = new Circle(10, Color.RED); // Inicializa a nova bolinha como vermelha
 
         addressPortLabel = new Label("");
         addressPortLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
@@ -73,33 +73,31 @@ public class App extends Application {
         centerAppBar.setAlignment(Pos.CENTER);
         centerAppBar.getChildren().add(addressPortLabel);
 
-        // Agrupa as bolinhas em um HBox
+        // Group the status circle
         HBox statusBox = new HBox(10);
         statusBox.setAlignment(Pos.CENTER_RIGHT);
-        statusBox.getChildren().addAll(statusCircle, filaStatusCircle);
+        statusBox.getChildren().add(statusCircle);
 
         appBar.setLeft(titleLabel);
         appBar.setCenter(centerAppBar);
         appBar.setRight(statusBox);
         BorderPane.setAlignment(statusBox, Pos.CENTER_RIGHT);
 
-        // Sidebar à esquerda
+        // Sidebar on the left
         VBox sideBar = new VBox(10);
         sideBar.setPadding(new Insets(10));
         sideBar.setStyle("-fx-background-color: #e0e0e0;");
-        sideBar.setPrefWidth(250); // Aumentar a largura da Sidebar
+        sideBar.setPrefWidth(250); // Increase Sidebar width
 
         Button ligar = new Button("Iniciar Servidor");
         Button microcontrolador = new Button("Microcontrolador");
-        Button ligarFila = new Button("Ligar Fila"); // Novo botão
         Button sair = new Button("Sair");
 
         ligar.setOnAction(e -> ligarDialog());
         microcontrolador.setOnAction(e -> microcontroladorDialog());
-        ligarFila.setOnAction(e -> ligarFilaDialog()); // Ação para o novo botão
         sair.setOnAction(e -> Platform.exit());
 
-        sideBar.getChildren().addAll(ligar, microcontrolador, ligarFila, sair);
+        sideBar.getChildren().addAll(ligar, microcontrolador, sair);
 
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(10));
@@ -121,20 +119,66 @@ public class App extends Application {
             grid.getColumnConstraints().add(colConstraints);
         }
 
-        tabela_conexoes = tabelaConexoes();
-        grid.add(tabela_conexoes, 0, 0);
+        // **First Change: Replace first table with scrollable card for connections**
 
-        tabela_dispositivos = tabelaDispositivos();
-        grid.add(tabela_dispositivos, 1, 0);
+        // Create a VBox to hold connections
+        VBox connectionsBox = new VBox();
+        connectionsBox.setSpacing(5);
+        connectionsBox.setPadding(new Insets(10));
+
+        // Wrap the VBox in a ScrollPane
+        ScrollPane connectionsScrollPane = new ScrollPane(connectionsBox);
+        connectionsScrollPane.setFitToWidth(true);
+
+        // Add the ScrollPane to the grid
+        grid.add(connectionsScrollPane, 0, 0);
+
+        // Observe the connections list and update the VBox when it changes
+        conexoesList.addListener((ListChangeListener<Device>) c -> {
+            Platform.runLater(() -> {
+                connectionsBox.getChildren().clear();
+                for (Device device : conexoesList) {
+                    Label label = new Label("id: " + device.getId() + " endereco: " + device.getAddress() + " porta: " + device.getPort());
+                    connectionsBox.getChildren().add(label);
+                }
+            });
+        });
+
+        // **Second Change: Replace second table with scrollable card for topics**
+
+        // Create a VBox to hold topics
+        VBox topicsBox = new VBox();
+        topicsBox.setSpacing(5);
+        topicsBox.setPadding(new Insets(10));
+
+        // Wrap the VBox in a ScrollPane
+        ScrollPane topicsScrollPane = new ScrollPane(topicsBox);
+        topicsScrollPane.setFitToWidth(true);
+
+        // Add the ScrollPane to the grid
+        grid.add(topicsScrollPane, 1, 0);
+
+        // Observe the topics list and update the VBox when it changes
+        topicsList.addListener((ListChangeListener<Topic>) c -> {
+            Platform.runLater(() -> {
+                topicsBox.getChildren().clear();
+                for (Topic topic : topicsList) {
+                    Label label = new Label("id: " + topic.getId() + " topico: " + topic.getTopic());
+                    topicsBox.getChildren().add(label);
+                }
+            });
+        });
 
         responses = new TextArea();
         grid.add(responses, 0, 1);
 
-        // Célula 4: Pode ser deixada vazia ou adicionar algo
-        Label cell4 = new Label("Célula 4");
-        cell4.setStyle("-fx-border-color: black; -fx-alignment: center;");
-        grid.add(cell4, 1, 1);
+        // **Third Change: Add a new table in cell (1,1) with specified columns**
 
+        // Create the status table and add it to the grid
+        TableView<Status> tabela_status = tabelaStatus();
+        grid.add(tabela_status, 1, 1);
+
+        // Set grow priorities for the grid cells
         for (int row = 0; row < 2; row++) {
             for (int col = 0; col < 2; col++) {
                 GridPane.setHgrow(grid.getChildren().get(row * 2 + col), Priority.ALWAYS);
@@ -149,7 +193,7 @@ public class App extends Application {
         root.setTop(appBar);
         root.setLeft(sideBar);
 
-        // Configuração da cena
+        // Scene configuration
         Scene scene = new Scene(root, 800, 600);
 
         primaryStage.setTitle("Simulador");
@@ -167,25 +211,46 @@ public class App extends Application {
 
         Label addressLabel = new Label("Endereço:");
         TextField addressField = new TextField();
+        addressField.setText("127.0.0.1");
 
         Label portLabel = new Label("Porta:");
         TextField portField = new TextField();
+        portField.setText("5000");
+
+        Label queueLabel = new Label("Nome da Fila:");
+        TextField queueField = new TextField();
+        queueField.setText("tcp://mqtt.eclipseprojects.io:1883");
 
         Button ligar = new Button("Ligar");
         Button cancelar = new Button("Cancelar");
 
         ligar.setOnAction(e -> {
             endereco = addressField.getText();
-            String port = portField.getText();
+            String portStr = portField.getText();
+            String queueName = queueField.getText();
 
-            if (!endereco.isEmpty() && !port.isEmpty()) {
-                statusCircle.setFill(Color.GREEN);
-                this.servidor = new Servidor(endereco, porta, true);
-                new Thread(() -> {
-                    this.servidor.startServer();
-                }).start();
-                addressPortLabel.setText("Servidor ligado (" + endereco + ":" + port + ")");
-                dialog.close();
+            if (!endereco.isEmpty() && !portStr.isEmpty() && !queueName.isEmpty()) {
+                try {
+                    porta = Integer.parseInt(portStr);
+                    statusCircle.setFill(Color.GREEN);
+                    this.servidor = new Servidor(endereco, porta, queueName, true, this.responses);
+                    new Thread(() -> {
+                        this.servidor.startServer();
+                    }).start();
+
+                    new Thread(() -> {
+                        this.servidor.startQueue();
+                    }).start();
+
+                    addressPortLabel.setText("Servidor ligado (" + endereco + ":" + portStr + ")");
+                    dialog.close();
+                } catch (NumberFormatException ex) {
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("Erro");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Porta deve ser um número inteiro.");
+                    alert.showAndWait();
+                }
             } else {
                 Alert alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Erro");
@@ -199,58 +264,14 @@ public class App extends Application {
             dialog.close();
         });
 
-        VBox vbox = new VBox(10, addressLabel, addressField, portLabel, portField, ligar, cancelar);
+        VBox vbox = new VBox(10, addressLabel, addressField, portLabel, portField, queueLabel, queueField, ligar, cancelar);
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(20));
 
-        Scene scene = new Scene(vbox, 400, 300);
+        Scene scene = new Scene(vbox, 400, 400);
         dialog.setScene(scene);
         dialog.showAndWait();
     }
-
-    private void ligarFilaDialog() {
-        Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.setTitle("Ligar Fila");
-
-        Label inputLabel = new Label("Digite o nome da Fila:");
-        TextField inputField = new TextField();
-
-        Button ligar = new Button("Ligar");
-        Button cancelar = new Button("Cancelar");
-
-        ligar.setOnAction(e -> {
-            String input = inputField.getText();
-
-            if (!input.isEmpty()) {
-                filaStatusCircle.setFill(Color.GREEN);
-                this.servidor.initQueue(input);
-                new Thread(() -> {
-                    this.servidor.startQueue();
-                }).start();
-                dialog.close();
-            } else {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle("Erro");
-                alert.setHeaderText(null);
-                alert.setContentText("Por favor, preencha o campo.");
-                alert.showAndWait();
-            }
-        });
-
-        cancelar.setOnAction(e -> {
-            dialog.close();
-        });
-
-        VBox vbox = new VBox(10, inputLabel, inputField, ligar, cancelar);
-        vbox.setAlignment(Pos.CENTER);
-        vbox.setPadding(new Insets(20));
-
-        Scene scene = new Scene(vbox, 300, 200);
-        dialog.setScene(scene);
-        dialog.showAndWait();
-    }
-
 
     private void microcontroladorDialog() {
         Stage dialog = new Stage();
@@ -335,6 +356,7 @@ public class App extends Application {
                     if (!idSalaStr.isEmpty()) {
                         int idSala = Integer.parseInt(idSalaStr);
                         System.out.println(op + " " + idSala);
+                        // Send command to specific room
                         dialog.close();
                     } else {
                         Alert alert = new Alert(AlertType.ERROR);
@@ -345,9 +367,9 @@ public class App extends Application {
                         return;
                     }
                 } else {
+                    // Send command to all rooms
                     dialog.close();
                 }
-                dialog.close();
             } else {
                 Alert alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Erro");
@@ -373,42 +395,26 @@ public class App extends Application {
         dialog.showAndWait();
     }
 
+    // Method to create the status table
     @SuppressWarnings("unchecked")
-    private TableView<Device> tabelaConexoes() {
-        TableView<Device> table = new TableView<>();
+    private TableView<Status> tabelaStatus() {
+        TableView<Status> table = new TableView<>();
 
-        TableColumn<Device, Integer> idColumn = new TableColumn<>("ID");
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-
-        TableColumn<Device, String> addressColumn = new TableColumn<>("Endereço");
-        addressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
-
-        TableColumn<Device, String> portColumn = new TableColumn<>("Porta");
-        portColumn.setCellValueFactory(new PropertyValueFactory<>("port"));
-
-        table.getColumns().addAll(idColumn, addressColumn, portColumn);
-
-        table.setItems(conexoesList);
-
-        return table;
-    }
-
-    @SuppressWarnings("unchecked")
-    private TableView<Appliance> tabelaDispositivos() {
-        TableView<Appliance> table = new TableView<>();
-
-        TableColumn<Appliance, Number> idColumn = new TableColumn<>("ID Sala");
+        TableColumn<Status, Number> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(cellData -> cellData.getValue().idProperty());
 
-        TableColumn<Appliance, Number> onColumn = new TableColumn<>("Ligados");
-        onColumn.setCellValueFactory(cellData -> cellData.getValue().onProperty());
+        TableColumn<Status, Number> ligadosColumn = new TableColumn<>("Ligados");
+        ligadosColumn.setCellValueFactory(cellData -> cellData.getValue().ligadosProperty());
 
-        TableColumn<Appliance, Number> offColumn = new TableColumn<>("Desligados");
-        offColumn.setCellValueFactory(cellData -> cellData.getValue().offProperty());
+        TableColumn<Status, Number> desligadosColumn = new TableColumn<>("Desligados");
+        desligadosColumn.setCellValueFactory(cellData -> cellData.getValue().desligadosProperty());
 
-        table.getColumns().addAll(idColumn, onColumn, offColumn);
+        TableColumn<Status, String> servidorColumn = new TableColumn<>("Servidor");
+        servidorColumn.setCellValueFactory(cellData -> cellData.getValue().servidorProperty());
 
-        table.setItems(dispositivosList);
+        table.getColumns().addAll(idColumn, ligadosColumn, desligadosColumn, servidorColumn);
+
+        table.setItems(statusList);
 
         return table;
     }
@@ -417,6 +423,7 @@ public class App extends Application {
         launch(args);
     }
 
+    // Class to represent a Device
     public static class Device {
         private Integer id;
         private String address;
@@ -441,52 +448,88 @@ public class App extends Application {
         }
     }
 
-    public static class Appliance {
+    // Class to represent a Topic
+    public static class Topic {
+        private int id;
+        private String topic;
+
+        public Topic(int id, String topic) {
+            this.id = id;
+            this.topic = topic;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getTopic() {
+            return topic;
+        }
+    }
+
+    // Class to represent Status data
+    public static class Status {
         private IntegerProperty id;
-        private IntegerProperty on;
-        private IntegerProperty off;
+        private IntegerProperty ligados;
+        private IntegerProperty desligados;
+        private StringProperty servidor;
 
-        public Appliance(Integer id, Integer on, Integer off) {
+        public Status(int id, int ligados, int desligados, String servidor) {
             this.id = new SimpleIntegerProperty(id);
-            this.on = new SimpleIntegerProperty(on);
-            this.off = new SimpleIntegerProperty(off);
+            this.ligados = new SimpleIntegerProperty(ligados);
+            this.desligados = new SimpleIntegerProperty(desligados);
+            this.servidor = new SimpleStringProperty(servidor);
         }
 
-        public Integer getId() {
+        public int getId() {
             return id.get();
-        }
-
-        public void setId(Integer id) {
-            this.id.set(id);
         }
 
         public IntegerProperty idProperty() {
             return id;
         }
 
-        public Integer getOn() {
-            return on.get();
+        public int getLigados() {
+            return ligados.get();
         }
 
-        public void setOn(Integer on) {
-            this.on.set(on);
+        public IntegerProperty ligadosProperty() {
+            return ligados;
         }
 
-        public IntegerProperty onProperty() {
-            return on;
+        public int getDesligados() {
+            return desligados.get();
         }
 
-        public Integer getOff() {
-            return off.get();
+        public IntegerProperty desligadosProperty() {
+            return desligados;
         }
 
-        public void setOff(Integer off) {
-            this.off.set(off);
+        public String getServidor() {
+            return servidor.get();
         }
 
-        public IntegerProperty offProperty() {
-            return off;
+        public StringProperty servidorProperty() {
+            return servidor;
         }
     }
-    
+
+    // Methods to update the lists
+    public void addConnection(Device device) {
+        Platform.runLater(() -> {
+            conexoesList.add(device);
+        });
+    }
+
+    public void addTopic(Topic topic) {
+        Platform.runLater(() -> {
+            topicsList.add(topic);
+        });
+    }
+
+    public void updateStatus(Status status) {
+        Platform.runLater(() -> {
+            statusList.add(status);
+        });
+    }
 }
