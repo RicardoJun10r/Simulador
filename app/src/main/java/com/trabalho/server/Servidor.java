@@ -237,7 +237,7 @@ public class Servidor {
 
                 int id = Integer.parseInt(idStr);
 
-                app.addTopic(new App.Topic(id, messageContent));
+                app.addTopic(new App.Topic(id, topico));
 
                 if (messageContent.startsWith("Sala com")) {
                     String[] lines = messageContent.split("\\*");
@@ -254,7 +254,7 @@ public class Servidor {
                 }
             }
 
-            if (!(parts[1].equals(String.valueOf(this.PORTA)))) {
+            if (!(parts[2].equals(String.valueOf(this.PORTA)))) {
                 this.USUARIOS.get(hash(Integer.parseInt(parts[1])))
                         .send(new ServerReq(this.HOST, this.PORTA, "response", response, -1, -1));
             }

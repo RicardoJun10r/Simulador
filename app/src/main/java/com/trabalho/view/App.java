@@ -49,7 +49,6 @@ public class App extends Application {
     private int porta;
 
     private Thread t_server;
-
     private Thread t_queue;
 
     private ObservableList<Device> conexoesList = FXCollections.observableArrayList();
@@ -60,7 +59,7 @@ public class App extends Application {
     public void start(Stage primaryStage) {
         BorderPane root = new BorderPane();
 
-        // AppBar at the top
+        // **AppBar at the top**
         BorderPane appBar = new BorderPane();
         appBar.setPadding(new Insets(10));
         appBar.setStyle("-fx-background-color: #f0f0f0;");
@@ -73,26 +72,7 @@ public class App extends Application {
         addressPortLabel = new Label("");
         addressPortLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
-        HBox centerAppBar = new HBox();
-        centerAppBar.setAlignment(Pos.CENTER);
-        centerAppBar.getChildren().add(addressPortLabel);
-
-        // Group the status circle
-        HBox statusBox = new HBox(10);
-        statusBox.setAlignment(Pos.CENTER_RIGHT);
-        statusBox.getChildren().add(statusCircle);
-
-        appBar.setLeft(titleLabel);
-        appBar.setCenter(centerAppBar);
-        appBar.setRight(statusBox);
-        BorderPane.setAlignment(statusBox, Pos.CENTER_RIGHT);
-
-        // Sidebar on the left
-        VBox sideBar = new VBox(10);
-        sideBar.setPadding(new Insets(10));
-        sideBar.setStyle("-fx-background-color: #e0e0e0;");
-        sideBar.setPrefWidth(250); // Increase Sidebar width
-
+        // **Create the buttons previously in the Sidebar**
         Button ligar = new Button("Iniciar Servidor");
         Button microcontrolador = new Button("Microcontrolador");
         Button sair = new Button("Sair");
@@ -105,18 +85,27 @@ public class App extends Application {
             Platform.exit();
         });
 
-        sideBar.getChildren().addAll(ligar, microcontrolador, sair);
+        // **Create HBox for the buttons and statusCircle**
+        HBox rightAppBar = new HBox(10);
+        rightAppBar.setAlignment(Pos.CENTER_RIGHT);
+        rightAppBar.getChildren().addAll(ligar, microcontrolador, sair, statusCircle);
 
+        // **Set up the AppBar layout**
+        appBar.setLeft(titleLabel);
+        appBar.setCenter(addressPortLabel);
+        appBar.setRight(rightAppBar);
+        BorderPane.setAlignment(rightAppBar, Pos.CENTER_RIGHT);
+
+        // **Create the main GridPane**
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(10));
         grid.setVgap(10);
         grid.setHgap(10);
-
         grid.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         grid.setAlignment(Pos.CENTER);
-
         grid.setEffect(new DropShadow());
 
+        // **Set row and column constraints**
         for (int i = 0; i < 2; i++) {
             RowConstraints rowConstraints = new RowConstraints();
             rowConstraints.setPercentHeight(50);
@@ -128,20 +117,13 @@ public class App extends Application {
         }
 
         // **First Change: Replace first table with scrollable card for connections**
-
-        // Create a VBox to hold connections
         VBox connectionsBox = new VBox();
         connectionsBox.setSpacing(5);
         connectionsBox.setPadding(new Insets(10));
-
-        // Wrap the VBox in a ScrollPane
         ScrollPane connectionsScrollPane = new ScrollPane(connectionsBox);
         connectionsScrollPane.setFitToWidth(true);
-
-        // Add the ScrollPane to the grid
         grid.add(connectionsScrollPane, 0, 0);
 
-        // Observe the connections list and update the VBox when it changes
         conexoesList.addListener((ListChangeListener<Device>) c -> {
             Platform.runLater(() -> {
                 connectionsBox.getChildren().clear();
@@ -153,20 +135,13 @@ public class App extends Application {
         });
 
         // **Second Change: Replace second table with scrollable card for topics**
-
-        // Create a VBox to hold topics
         VBox topicsBox = new VBox();
         topicsBox.setSpacing(5);
         topicsBox.setPadding(new Insets(10));
-
-        // Wrap the VBox in a ScrollPane
         ScrollPane topicsScrollPane = new ScrollPane(topicsBox);
         topicsScrollPane.setFitToWidth(true);
-
-        // Add the ScrollPane to the grid
         grid.add(topicsScrollPane, 1, 0);
 
-        // Observe the topics list and update the VBox when it changes
         topicsList.addListener((ListChangeListener<Topic>) c -> {
             Platform.runLater(() -> {
                 topicsBox.getChildren().clear();
@@ -181,12 +156,10 @@ public class App extends Application {
         grid.add(responses, 0, 1);
 
         // **Third Change: Add a new table in cell (1,1) with specified columns**
-
-        // Create the status table and add it to the grid
         TableView<Status> tabela_status = tabelaStatus();
         grid.add(tabela_status, 1, 1);
 
-        // Set grow priorities for the grid cells
+        // **Set grow priorities for the grid cells**
         for (int row = 0; row < 2; row++) {
             for (int col = 0; col < 2; col++) {
                 GridPane.setHgrow(grid.getChildren().get(row * 2 + col), Priority.ALWAYS);
@@ -194,21 +167,17 @@ public class App extends Application {
             }
         }
 
+        // **Set up the root layout**
+        root.setTop(appBar);
         root.setCenter(grid);
         BorderPane.setAlignment(grid, Pos.CENTER);
         BorderPane.setMargin(grid, new Insets(10));
 
-        root.setTop(appBar);
-        root.setLeft(sideBar);
-
-        // Scene configuration
+        // **Scene configuration**
         Scene scene = new Scene(root, 800, 600);
-
         primaryStage.setTitle("Simulador");
         primaryStage.setScene(scene);
-
         primaryStage.setFullScreen(true);
-
         primaryStage.show();
     }
 

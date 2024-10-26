@@ -64,6 +64,7 @@ public class BrokerQueue {
 
                 public void connectionLost(Throwable causa) {
                     System.out.println("Conexão com o broker foi perdida!" + causa.getMessage());
+                    causa.printStackTrace();
                     trava.countDown();
                 }
 

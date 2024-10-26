@@ -49,7 +49,7 @@ public class Microcontrolador {
 
                 conteudo = processarComando(conteudo);
 
-                String response = conteudo + "." + porta;
+                String response = id + "." + conteudo + "." + porta;
  
                 executor.execute(() -> {
                     broker.sendMessage(1, response);
