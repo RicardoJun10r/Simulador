@@ -18,9 +18,10 @@ import com.trabalho.broker.IBrokerQueue;
 import com.trabalho.shared.Comando;
 import com.trabalho.shared.ServerReq;
 import com.trabalho.util.ClientSocket;
+import com.trabalho.view.App;
+import com.trabalho.view.App.Device;
 
 import javafx.application.Platform;
-import javafx.scene.control.TextArea;
 
 public class Servidor {
 
@@ -44,9 +45,9 @@ public class Servidor {
 
     private BlockingQueue<Comando> comandos = new LinkedBlockingQueue<>();
 
-    private TextArea responses;
+    private App app;
 
-    public Servidor(String host, int porta, String endereco_broker, Boolean debug, TextArea responses) {
+    public Servidor(String host, int porta, String endereco_broker, Boolean debug, App app) {
         this.HOST = host;
         this.PORTA = porta;
         String[] TOPICO = { "servidor", "microcontrolador" };
@@ -54,7 +55,7 @@ public class Servidor {
         this.DEBUG = debug;
         this.listenMethod();
         this.executor = Executors.newFixedThreadPool(N_THREADS);
-        this.responses = responses;
+        this.app = app;
     }
 
     public Servidor(String host, int porta, Boolean debug) {
@@ -76,6 +77,9 @@ public class Servidor {
 
     private void add(Integer id, ClientSocket socket) {
         this.USUARIOS.put(id, socket);
+        Platform.runLater(() -> {
+            app.addConnection(new Device(id, socket.getSocketAddress().toString(), String.valueOf(socket.getPort())));
+        });
     }
 
     private void server() {
@@ -170,6 +174,12 @@ public class Servidor {
                     System.out.println("DEBUG [" + cliente_socket.getSocketAddress().toString() + ":"
                             + cliente_socket.getPort() + "]: " + line.toString());
                 }
+                String responseText = line.getMensagem();
+                Platform.runLater(() -> {
+                    String existingText = app.getResponses().getText();
+                    app.getResponses().setText(existingText + "\n" + responseText);
+                });
+
                 if (line.getHeaders().equalsIgnoreCase("handshake")) {
                     if (this.USUARIOS.containsKey(hash(line.getPorta()))) {
                         this.USUARIOS.get(hash(line.getPorta()))
@@ -192,8 +202,11 @@ public class Servidor {
                     this.broker.sendMessage(1, req);
                 }
                 if(line.getHeaders().equals("response")){
-                    final String receivedLine = responses.getText() + "\n" + line.getMensagem();
-                    Platform.runLater(() -> responses.setText(receivedLine));
+                    final String receivedLine = line.getMensagem();
+                    Platform.runLater(() -> {
+                        String existingText = app.getResponses().getText();
+                        app.getResponses().setText(existingText + "\n" + receivedLine);
+                    });
                 }
             }
         }
@@ -211,8 +224,38 @@ public class Servidor {
                         "\n\tQoS:     " + mensagem.getQos() + "\n");
             }
 
-            if (!(response.split("\\.")[1].equals(String.valueOf(this.PORTA)))) {
-                this.USUARIOS.get(hash(Integer.parseInt(response.split("\\.")[1])))
+            Platform.runLater(() -> {
+                String existingText = app.getResponses().getText();
+                app.getResponses().setText(existingText + "\n" + response);
+            });
+
+            String[] parts = response.split("\\.");
+
+            if (parts.length >= 2) {
+                String idStr = parts[0];
+                String messageContent = response.substring(idStr.length() + 1);
+
+                int id = Integer.parseInt(idStr);
+
+                app.addTopic(new App.Topic(id, messageContent));
+
+                if (messageContent.startsWith("Sala com")) {
+                    String[] lines = messageContent.split("\\*");
+                    // String totalAparelhosLine = lines[0]; // "Sala com [ N ] aparelhos"
+                    String ligadosLine = lines[1];
+                    String desligadosLine = lines[2];
+
+                    // int totalAparelhos = Integer.parseInt(totalAparelhosLine.replaceAll("[^0-9]", ""));
+                    int ligados = Integer.parseInt(ligadosLine.replaceAll("[^0-9]", ""));
+                    int desligados = Integer.parseInt(desligadosLine.replaceAll("[^0-9]", ""));
+
+                    int statusId = id;
+                    app.updateStatus(new App.Status(statusId, ligados, desligados, topico));
+                }
+            }
+
+            if (!(parts[1].equals(String.valueOf(this.PORTA)))) {
+                this.USUARIOS.get(hash(Integer.parseInt(parts[1])))
                         .send(new ServerReq(this.HOST, this.PORTA, "response", response, -1, -1));
             }
         };

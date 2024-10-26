@@ -16,7 +16,7 @@ public class Comando {
 
     private Integer porta;
 
-    public Comando(){}
+    public Comando() {}
 
     public Comando(String endereco, Integer porta) {
         this.endereco = endereco;
@@ -30,13 +30,25 @@ public class Comando {
     }
 
     public Comando(Integer opcao, Integer microcontrolador_id, Integer server_id, Integer microcontrolador_opcao,
-            Integer server_opcao) {
+                   Integer server_opcao) {
         this.opcao = opcao;
         this.microcontrolador_id = microcontrolador_id;
         this.server_id = server_id;
         this.microcontrolador_opcao = microcontrolador_opcao;
         this.server_opcao = server_opcao;
     }
+
+    // New Constructor
+    public Comando(Integer opcao, Integer microcontrolador_opcao, Integer microcontrolador_id, Integer server_opcao,
+                   String endereco, Integer porta) {
+        this.opcao = opcao;
+        this.microcontrolador_opcao = microcontrolador_opcao;
+        this.microcontrolador_id = microcontrolador_id;
+        this.server_opcao = server_opcao;
+        this.endereco = endereco;
+        this.porta = porta;
+    }
+
 
     public Integer getOpcao() {
         return opcao;

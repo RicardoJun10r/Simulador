@@ -1,6 +1,7 @@
 package com.trabalho.view;
 
 import com.trabalho.server.Servidor;
+import com.trabalho.shared.Comando;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -25,7 +26,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
@@ -47,6 +47,10 @@ public class App extends Application {
     private TextArea responses;
     private String endereco;
     private int porta;
+
+    private Thread t_server;
+
+    private Thread t_queue;
 
     private ObservableList<Device> conexoesList = FXCollections.observableArrayList();
     private ObservableList<Topic> topicsList = FXCollections.observableArrayList();
@@ -95,7 +99,11 @@ public class App extends Application {
 
         ligar.setOnAction(e -> ligarDialog());
         microcontrolador.setOnAction(e -> microcontroladorDialog());
-        sair.setOnAction(e -> Platform.exit());
+        sair.setOnAction(e -> {
+            if (this.t_server != null) this.t_server.interrupt();
+            if (this.t_queue != null) this.t_queue.interrupt();
+            Platform.exit();
+        });
 
         sideBar.getChildren().addAll(ligar, microcontrolador, sair);
 
@@ -233,14 +241,17 @@ public class App extends Application {
                 try {
                     porta = Integer.parseInt(portStr);
                     statusCircle.setFill(Color.GREEN);
-                    this.servidor = new Servidor(endereco, porta, queueName, true, this.responses);
-                    new Thread(() -> {
+                    this.servidor = new Servidor(endereco, porta, queueName, true, this);
+                    this.t_server = new Thread(() -> {
                         this.servidor.startServer();
-                    }).start();
+                    });
 
-                    new Thread(() -> {
+                    this.t_queue = new Thread(() -> {
                         this.servidor.startQueue();
-                    }).start();
+                    });
+
+                    this.t_server.start();
+                    this.t_queue.start();
 
                     addressPortLabel.setText("Servidor ligado (" + endereco + ":" + portStr + ")");
                     dialog.close();
@@ -355,8 +366,9 @@ public class App extends Application {
                     String idSalaStr = inputField.getText();
                     if (!idSalaStr.isEmpty()) {
                         int idSala = Integer.parseInt(idSalaStr);
-                        System.out.println(op + " " + idSala);
                         // Send command to specific room
+                        Comando comando = new Comando(0, op, idSala, -1, "", -1);
+                        servidor.addComando(comando);
                         dialog.close();
                     } else {
                         Alert alert = new Alert(AlertType.ERROR);
@@ -368,6 +380,8 @@ public class App extends Application {
                     }
                 } else {
                     // Send command to all rooms
+                    Comando comando = new Comando(0, op, -1, -1, "", -1);
+                    servidor.addComando(comando);
                     dialog.close();
                 }
             } else {
@@ -529,7 +543,21 @@ public class App extends Application {
 
     public void updateStatus(Status status) {
         Platform.runLater(() -> {
-            statusList.add(status);
+            boolean found = false;
+            for (int i = 0; i < statusList.size(); i++) {
+                if (statusList.get(i).getId() == status.getId()) {
+                    statusList.set(i, status); // Update existing status
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                statusList.add(status); // Add new status
+            }
         });
+    }
+
+    public TextArea getResponses() {
+        return responses;
     }
 }
