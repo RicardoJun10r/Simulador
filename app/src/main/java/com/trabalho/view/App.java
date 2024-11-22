@@ -75,20 +75,24 @@ public class App extends Application {
         // **Create the buttons previously in the Sidebar**
         Button ligar = new Button("Iniciar Servidor");
         Button microcontrolador = new Button("Microcontrolador");
+        Button add_conexao = new Button("Adicionar Conexão");
         Button sair = new Button("Sair");
 
         ligar.setOnAction(e -> ligarDialog());
         microcontrolador.setOnAction(e -> microcontroladorDialog());
+        add_conexao.setOnAction(e -> servidorDialog());
         sair.setOnAction(e -> {
-            if (this.t_server != null) this.t_server.interrupt();
-            if (this.t_queue != null) this.t_queue.interrupt();
+            if (this.t_server != null)
+                this.t_server.interrupt();
+            if (this.t_queue != null)
+                this.t_queue.interrupt();
             Platform.exit();
         });
 
         // **Create HBox for the buttons and statusCircle**
         HBox rightAppBar = new HBox(10);
         rightAppBar.setAlignment(Pos.CENTER_RIGHT);
-        rightAppBar.getChildren().addAll(ligar, microcontrolador, sair, statusCircle);
+        rightAppBar.getChildren().addAll(ligar, microcontrolador,add_conexao, sair, statusCircle);
 
         // **Set up the AppBar layout**
         appBar.setLeft(titleLabel);
@@ -122,13 +126,13 @@ public class App extends Application {
         connectionsBox.setPadding(new Insets(10));
         ScrollPane connectionsScrollPane = new ScrollPane(connectionsBox);
         connectionsScrollPane.setFitToWidth(true);
-        grid.add(connectionsScrollPane, 0, 0);
 
         conexoesList.addListener((ListChangeListener<Device>) c -> {
             Platform.runLater(() -> {
                 connectionsBox.getChildren().clear();
                 for (Device device : conexoesList) {
-                    Label label = new Label("id: " + device.getId() + " endereco: " + device.getAddress() + " porta: " + device.getPort());
+                    Label label = new Label("id: " + device.getId() + " endereco: " + device.getAddress() + " porta: "
+                            + device.getPort());
                     connectionsBox.getChildren().add(label);
                 }
             });
@@ -140,7 +144,6 @@ public class App extends Application {
         topicsBox.setPadding(new Insets(10));
         ScrollPane topicsScrollPane = new ScrollPane(topicsBox);
         topicsScrollPane.setFitToWidth(true);
-        grid.add(topicsScrollPane, 1, 0);
 
         topicsList.addListener((ListChangeListener<Topic>) c -> {
             Platform.runLater(() -> {
@@ -153,19 +156,53 @@ public class App extends Application {
         });
 
         responses = new TextArea();
-        grid.add(responses, 0, 1);
 
         // **Third Change: Add a new table in cell (1,1) with specified columns**
         TableView<Status> tabela_status = tabelaStatus();
-        grid.add(tabela_status, 1, 1);
 
-        // **Set grow priorities for the grid cells**
-        for (int row = 0; row < 2; row++) {
-            for (int col = 0; col < 2; col++) {
-                GridPane.setHgrow(grid.getChildren().get(row * 2 + col), Priority.ALWAYS);
-                GridPane.setVgrow(grid.getChildren().get(row * 2 + col), Priority.ALWAYS);
-            }
-        }
+        // **Criação dos Labels para os títulos**
+        Label connectionsLabel = new Label("Conexões");
+        Label topicsLabel = new Label("Tópicos");
+        Label responsesLabel = new Label("Respostas");
+        Label statusLabel = new Label("Status");
+
+        // **Primeira alteração: Substituir a tabela de conexões por um contêiner com
+        // título**
+        VBox connectionsContainer = new VBox(5, connectionsLabel, connectionsScrollPane);
+        connectionsContainer.setPadding(new Insets(10));
+        VBox.setVgrow(connectionsScrollPane, Priority.ALWAYS);
+        connectionsScrollPane.setFitToHeight(true);
+        connectionsScrollPane.setFitToWidth(true);
+        grid.add(connectionsContainer, 0, 0);
+        GridPane.setHgrow(connectionsContainer, Priority.ALWAYS);
+        GridPane.setVgrow(connectionsContainer, Priority.ALWAYS);
+
+        // **Segunda alteração: Substituir a tabela de tópicos por um contêiner com
+        // título**
+        VBox topicsContainer = new VBox(5, topicsLabel, topicsScrollPane);
+        topicsContainer.setPadding(new Insets(10));
+        VBox.setVgrow(topicsScrollPane, Priority.ALWAYS);
+        topicsScrollPane.setFitToHeight(true);
+        topicsScrollPane.setFitToWidth(true);
+        grid.add(topicsContainer, 1, 0);
+        GridPane.setHgrow(topicsContainer, Priority.ALWAYS);
+        GridPane.setVgrow(topicsContainer, Priority.ALWAYS);
+
+        // **Adicionar título à área de respostas**
+        VBox responsesContainer = new VBox(5, responsesLabel, responses);
+        responsesContainer.setPadding(new Insets(10));
+        VBox.setVgrow(responses, Priority.ALWAYS);
+        grid.add(responsesContainer, 0, 1);
+        GridPane.setHgrow(responsesContainer, Priority.ALWAYS);
+        GridPane.setVgrow(responsesContainer, Priority.ALWAYS);
+
+        // **Adicionar título à tabela de status**
+        VBox statusContainer = new VBox(5, statusLabel, tabela_status);
+        statusContainer.setPadding(new Insets(10));
+        VBox.setVgrow(tabela_status, Priority.ALWAYS);
+        grid.add(statusContainer, 1, 1);
+        GridPane.setHgrow(statusContainer, Priority.ALWAYS);
+        GridPane.setVgrow(statusContainer, Priority.ALWAYS);
 
         // **Set up the root layout**
         root.setTop(appBar);
@@ -179,6 +216,63 @@ public class App extends Application {
         primaryStage.setScene(scene);
         primaryStage.setFullScreen(true);
         primaryStage.show();
+    }
+
+    // **Implementação do método servidorDialog()**
+    private void servidorDialog() {
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Servidor");
+
+        Label addressLabel = new Label("Endereço:");
+        TextField addressField = new TextField();
+
+        Label portLabel = new Label("Porta:");
+        TextField portField = new TextField();
+
+        Button conectar = new Button("Conectar");
+        Button cancelar = new Button("Cancelar");
+
+        conectar.setOnAction(e -> {
+            String endereco_nc = addressField.getText();
+            String portStr = portField.getText();
+
+            if (!endereco_nc.isEmpty() && !portStr.isEmpty()) {
+                try {
+                    int porta_nc = Integer.parseInt(portStr);
+                    
+                    Comando comando = new Comando(3, endereco_nc, porta_nc);
+
+                    this.servidor.addComando(comando);
+
+                    dialog.close();
+                } catch (NumberFormatException ex) {
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("Erro");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Porta deve ser um número inteiro.");
+                    alert.showAndWait();
+                }
+            } else {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Erro");
+                alert.setHeaderText(null);
+                alert.setContentText("Por favor, preencha todos os campos.");
+                alert.showAndWait();
+            }
+        });
+
+        cancelar.setOnAction(e -> {
+            dialog.close();
+        });
+
+        VBox vbox = new VBox(10, addressLabel, addressField, portLabel, portField, conectar, cancelar);
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setPadding(new Insets(20));
+
+        Scene scene = new Scene(vbox, 300, 300);
+        dialog.setScene(scene);
+        dialog.showAndWait();
     }
 
     private void ligarDialog() {
@@ -244,7 +338,8 @@ public class App extends Application {
             dialog.close();
         });
 
-        VBox vbox = new VBox(10, addressLabel, addressField, portLabel, portField, queueLabel, queueField, ligar, cancelar);
+        VBox vbox = new VBox(10, addressLabel, addressField, portLabel, portField, queueLabel, queueField, ligar,
+                cancelar);
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(20));
 

@@ -18,7 +18,8 @@ public class Comando {
 
     public Comando() {}
 
-    public Comando(String endereco, Integer porta) {
+    public Comando(Integer opcao, String endereco, Integer porta) {
+        this.opcao = opcao;
         this.endereco = endereco;
         this.porta = porta;
     }
