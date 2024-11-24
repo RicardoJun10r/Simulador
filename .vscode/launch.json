@@ -44,7 +44,8 @@
             "name": "Main",
             "request": "launch",
             "mainClass": "com.trabalho.Main",
-            "projectName": "app"
+            "projectName": "app",
+            "vmArgs": "--module-path ./app/javafx-sdk-21.0.4/lib/ --add-modules javafx.controls"
         }
     ]
 }

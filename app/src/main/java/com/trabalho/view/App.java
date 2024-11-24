@@ -497,9 +497,9 @@ public class App extends Application {
         return table;
     }
 
-    public static void main(String[] args) {
-        launch(args);
-    }
+    // public static void main(String[] args) {
+    //     launch(args);
+    // }
 
     // Class to represent a Device
     public static class Device {
