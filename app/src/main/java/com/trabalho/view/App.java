@@ -304,7 +304,7 @@ public class App extends Application {
                 try {
                     porta = Integer.parseInt(portStr);
                     statusCircle.setFill(Color.GREEN);
-                    this.servidor = new Servidor(endereco, porta, queueName, true, this);
+                    this.servidor = new Servidor(endereco, porta, queueName, true);
                     this.t_server = new Thread(() -> {
                         this.servidor.startServer();
                     });

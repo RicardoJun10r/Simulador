@@ -16,9 +16,14 @@
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="401.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.trabalho.controller.SimuladorController">
+<AnchorPane
+   maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
+   prefHeight="401.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22"
+   xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.trabalho.controller.SimuladorController">
    <children>
-      <Pane prefHeight="54.0" prefWidth="800.0" style="-fx-background-color: #87CEEB;">
+      <Pane
+         prefHeight="54.0" style="-fx-background-color: #87CEEB;" AnchorPane.topAnchor="0.0"
+         AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
          <children>
             <Label layoutX="14.0" layoutY="12.0" text="Simulador">
                <font>
@@ -27,9 +32,13 @@
             </Label>
          </children>
       </Pane>
-      <VBox layoutY="53.0" prefHeight="348.0" prefWidth="131.0" style="-fx-background-color: #87CEEB;">
+      <VBox
+         style="-fx-background-color: #87CEEB;" AnchorPane.topAnchor="54.0"
+         AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0">
          <children>
-            <Button mnemonicParsing="false" mouseTransparent="true" onAction="#microcontroladorDialog" prefHeight="30.0" prefWidth="157.0" style="-fx-background-color: #87CEEB;" text="Microcontroladores">
+            <Button mnemonicParsing="false" mouseTransparent="false"
+               onAction="#microcontroladorDialog" prefHeight="30.0" prefWidth="157.0"
+               style="-fx-background-color: #87CEEB;" text="Microcontroladores">
                <VBox.margin>
                   <Insets top="10.0" />
                </VBox.margin>
@@ -37,7 +46,9 @@
                   <Font name="Roboto" size="13.0" />
                </font>
             </Button>
-            <Button mnemonicParsing="false" onAction="#servidorDialog" prefHeight="30.0" prefWidth="158.0" style="-fx-background-color: #87CEEB;" styleClass="buttons" text="Servidores">
+            <Button mnemonicParsing="false" onAction="#servidorDialog" prefHeight="30.0"
+               prefWidth="158.0" style="-fx-background-color: #87CEEB;" styleClass="buttons"
+               text="Servidores">
                <VBox.margin>
                   <Insets top="10.0" />
                </VBox.margin>
@@ -45,14 +56,17 @@
                   <Font name="Roboto" size="13.0" />
                </font>
             </Button>
-            <Button mnemonicParsing="false" onAction="#sair" prefHeight="30.0" prefWidth="184.0" style="-fx-background-color: #87CEEB;" styleClass="buttons" text="Sair">
+            <Button mnemonicParsing="false" onAction="#sair" prefHeight="30.0" prefWidth="184.0"
+               style="-fx-background-color: #87CEEB;" styleClass="buttons" text="Sair">
                <VBox.margin>
                   <Insets top="10.0" />
                </VBox.margin>
             </Button>
          </children>
       </VBox>
-      <GridPane layoutX="131.0" layoutY="53.0" prefHeight="348.0" prefWidth="669.0">
+      <GridPane
+         AnchorPane.topAnchor="54.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="200.0"
+         AnchorPane.rightAnchor="0.0">
          <columnConstraints>
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -67,16 +81,16 @@
                   <Separator prefWidth="200.0" />
                   <TableView fx:id="microcontroladores_tabela" prefHeight="307.0" prefWidth="214.0">
                      <columns>
-                        <TableColumn prefWidth="69.00003051757812" text="ID" />
-                        <TableColumn prefWidth="94.0" text="Endereço" />
-                        <TableColumn prefWidth="105.0" text="Aparelhos">
-                           <columns>
-                              <TableColumn prefWidth="56.000030517578125" text="Ligados" />
-                              <TableColumn prefWidth="69.0" text="Desligados" />
-                           </columns>
-                        </TableColumn>
+                         <TableColumn fx:id="colId" prefWidth="69.0" text="ID" />
+                         <TableColumn fx:id="colEndereco" prefWidth="94.0" text="Endereço" />
+                         <TableColumn text="Aparelhos" prefWidth="105.0">
+                             <columns>
+                                 <TableColumn fx:id="colAparelhosLigados" prefWidth="56.0" text="Ligados" />
+                                 <TableColumn fx:id="colAparelhosDesligados" prefWidth="69.0" text="Desligados" />
+                             </columns>
+                         </TableColumn>
                      </columns>
-                  </TableView>
+                 </TableView>
                </children>
                <padding>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
@@ -100,12 +114,18 @@
             </VBox>
          </children>
       </GridPane>
-      <Button layoutX="627.0" layoutY="12.0" mnemonicParsing="false" onAction="#ligarServidor" style="-fx-background-color: #00BFFF;" styleClass="buttons" text="Ligar Servidor" textAlignment="CENTER">
+      <Button
+         text="Ligar Servidor" onAction="#ligarServidor" style="-fx-background-color: #00BFFF;"
+         AnchorPane.topAnchor="12.0" AnchorPane.rightAnchor="40.0">
          <font>
             <Font name="Roboto" size="13.0" />
          </font>
       </Button>
-      <Circle fx:id="circle_toogle" fill="#ff1f1f" layoutX="764.0" layoutY="27.0" radius="12.0" stroke="BLACK" strokeType="INSIDE" />
-      <TextField fx:id="endereco_porta_tf" layoutX="224.0" layoutY="14.0" visible="false" />
+      <Circle
+         fx:id="circle_toogle" fill="#ff1f1f" radius="12.0" stroke="BLACK"
+         AnchorPane.topAnchor="15.0" AnchorPane.rightAnchor="10.0" />
+      <Label
+         fx:id="endereco_porta_lb" visible="false" AnchorPane.topAnchor="12.0"
+         AnchorPane.leftAnchor="224.0" />
    </children>
 </AnchorPane>

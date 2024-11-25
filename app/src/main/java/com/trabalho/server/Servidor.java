@@ -15,13 +15,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import com.trabalho.broker.BrokerQueue;
 import com.trabalho.broker.IBrokerQueue;
+import com.trabalho.controller.SimuladorController;
 import com.trabalho.shared.Comando;
 import com.trabalho.shared.ServerReq;
+import com.trabalho.util.Aparelho;
 import com.trabalho.util.ClientSocket;
-import com.trabalho.view.App;
-import com.trabalho.view.App.Device;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 
 public class Servidor {
 
@@ -45,9 +47,9 @@ public class Servidor {
 
     private BlockingQueue<Comando> comandos = new LinkedBlockingQueue<>();
 
-    private App app;
+    private SimuladorController app;
 
-    public Servidor(String host, int porta, String endereco_broker, Boolean debug, App app) {
+    public Servidor(String host, int porta, String endereco_broker, Boolean debug, SimuladorController app) {
         this.HOST = host;
         this.PORTA = porta;
         String[] TOPICO = { "servidor", "microcontrolador" };
@@ -56,6 +58,16 @@ public class Servidor {
         this.listenMethod();
         this.executor = Executors.newFixedThreadPool(N_THREADS);
         this.app = app;
+    }
+
+    public Servidor(String host, int porta, String endereco_broker, Boolean debug) {
+        this.HOST = host;
+        this.PORTA = porta;
+        String[] TOPICO = { "servidor", "microcontrolador" };
+        this.broker = new BrokerQueue(endereco_broker, TOPICO, 0);
+        this.DEBUG = debug;
+        this.listenMethod();
+        this.executor = Executors.newFixedThreadPool(N_THREADS);
     }
 
     public Servidor(String host, int porta, Boolean debug) {
@@ -77,8 +89,14 @@ public class Servidor {
 
     private void add(Integer id, ClientSocket socket) {
         this.USUARIOS.put(id, socket);
+
         Platform.runLater(() -> {
-            app.addConnection(new Device(id, socket.getSocketAddress().toString(), String.valueOf(socket.getPort())));
+            this.app.getData().add(new Aparelho(
+                new SimpleIntegerProperty(id),
+                new SimpleStringProperty(socket.getSocketAddress().toString()),
+                new SimpleIntegerProperty(0),
+                new SimpleIntegerProperty(0)
+            ));
         });
     }
 
@@ -175,10 +193,10 @@ public class Servidor {
                             + cliente_socket.getPort() + "]: " + line.toString());
                 }
                 String responseText = line.getMensagem();
-                Platform.runLater(() -> {
-                    String existingText = app.getResponses().getText();
-                    app.getResponses().setText(existingText + "\n" + responseText);
-                });
+                // Platform.runLater(() -> {
+                //     String existingText = app.getResponses().getText();
+                //     app.getResponses().setText(existingText + "\n" + responseText);
+                // });
 
                 if (line.getHeaders().equalsIgnoreCase("handshake")) {
                     if (this.USUARIOS.containsKey(hash(line.getPorta()))) {
@@ -203,10 +221,10 @@ public class Servidor {
                 }
                 if(line.getHeaders().equals("response")){
                     final String receivedLine = line.getMensagem();
-                    Platform.runLater(() -> {
-                        String existingText = app.getResponses().getText();
-                        app.getResponses().setText(existingText + "\n" + receivedLine);
-                    });
+                    // Platform.runLater(() -> {
+                    //     String existingText = app.getResponses().getText();
+                    //     app.getResponses().setText(existingText + "\n" + receivedLine);
+                    // });
                 }
             }
         }
@@ -224,10 +242,10 @@ public class Servidor {
                         "\n\tQoS:     " + mensagem.getQos() + "\n");
             }
 
-            Platform.runLater(() -> {
-                String existingText = app.getResponses().getText();
-                app.getResponses().setText(existingText + "\n" + response);
-            });
+            // Platform.runLater(() -> {
+            //     String existingText = app.getResponses().getText();
+            //     app.getResponses().setText(existingText + "\n" + response);
+            // });
 
             String[] parts = response.split("\\.");
 
@@ -237,7 +255,7 @@ public class Servidor {
 
                 int id = Integer.parseInt(idStr);
 
-                app.addTopic(new App.Topic(id, topico));
+                // app.addTopic(new App.Topic(id, topico));
 
                 if (messageContent.startsWith("Sala com")) {
                     String[] lines = messageContent.split("\\*");
@@ -250,7 +268,7 @@ public class Servidor {
                     int desligados = Integer.parseInt(desligadosLine.replaceAll("[^0-9]", ""));
 
                     int statusId = id;
-                    app.updateStatus(new App.Status(statusId, ligados, desligados, topico));
+                    // app.updateStatus(new App.Status(statusId, ligados, desligados, topico));
                 }
             }
 
