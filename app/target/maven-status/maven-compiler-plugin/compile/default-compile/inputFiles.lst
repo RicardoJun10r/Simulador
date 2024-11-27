@@ -8,6 +8,7 @@
 /home/ricardojunior/codigos/BolsaMPI/Simulador/app/src/main/java/com/trabalho/util/MenuInterface.java
 /home/ricardojunior/codigos/BolsaMPI/Simulador/app/src/main/java/com/trabalho/view/App.java
 /home/ricardojunior/codigos/BolsaMPI/Simulador/app/src/main/java/com/trabalho/client/MainClient.java
+/home/ricardojunior/codigos/BolsaMPI/Simulador/app/src/main/java/com/trabalho/util/Conexao.java
 /home/ricardojunior/codigos/BolsaMPI/Simulador/app/src/main/java/com/trabalho/shared/Comando.java
 /home/ricardojunior/codigos/BolsaMPI/Simulador/app/src/main/java/com/trabalho/salaAula/Aparelhos/Computador.java
 /home/ricardojunior/codigos/BolsaMPI/Simulador/app/src/main/java/com/trabalho/client/Microcontrolador.java

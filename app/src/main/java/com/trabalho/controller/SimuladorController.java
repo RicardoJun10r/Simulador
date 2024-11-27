@@ -3,11 +3,11 @@ package com.trabalho.controller;
 import com.trabalho.server.Servidor;
 import com.trabalho.shared.Comando;
 import com.trabalho.util.Aparelho;
+import com.trabalho.util.Conexao;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -51,17 +51,22 @@ public class SimuladorController {
     private TableView<Aparelho> microcontroladores_tabela;
 
     @FXML
-    private TableView<?> servidores_tabela;
-
-    private ObservableList<Aparelho> microcontroladoresData = FXCollections.observableArrayList();
-
-    public ObservableList<Aparelho> getData(){ return this.microcontroladoresData; }
+    private TableView<Conexao> servidores_tabela;
 
     @FXML
-    private TableColumn<Aparelho, Integer> colId;
+    private TableColumn<Conexao, Integer> colSId;
 
     @FXML
-    private TableColumn<Aparelho, String> colEndereco;
+    private TableColumn<Conexao, String> colSEndereco;
+
+    @FXML
+    private TableColumn<Conexao, Integer> colPorta;
+
+    @FXML
+    private TableColumn<Conexao, Integer> colMId;
+
+    @FXML
+    private TableColumn<Aparelho, String> colMEndereco;
 
     @FXML
     private TableColumn<Aparelho, Integer> colAparelhosLigados;
@@ -69,13 +74,25 @@ public class SimuladorController {
     @FXML
     private TableColumn<Aparelho, Integer> colAparelhosDesligados;
 
+    private ObservableList<Aparelho> microcontroladoresData = FXCollections.observableArrayList();
+
+    private ObservableList<Conexao> servidoresData = FXCollections.observableArrayList();
+
+    public ObservableList<Aparelho> getMicrocontroladoresTable() { return this.microcontroladoresData; }
+
+    public ObservableList<Conexao> getServidoresTable() { return this.servidoresData; }
+    
     @FXML
     private void initialize() {
-        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
-        colEndereco.setCellValueFactory(new PropertyValueFactory<>("endereco"));
-        colAparelhosLigados.setCellValueFactory(new PropertyValueFactory<>("aparelhosLigados"));
-        colAparelhosDesligados.setCellValueFactory(new PropertyValueFactory<>("aparelhosDesligados"));
-
+        colMId.setCellValueFactory(cellData -> cellData.getValue().idProperty().asObject());
+        colMEndereco.setCellValueFactory(cellData -> cellData.getValue().enderecoProperty());
+        colAparelhosLigados.setCellValueFactory(cellData -> cellData.getValue().aparelhosLigadosProperty().asObject());
+        colAparelhosDesligados
+                .setCellValueFactory(cellData -> cellData.getValue().aparelhosDesligadosProperty().asObject());
+        colSId.setCellValueFactory(cellData -> cellData.getValue().idProperty().asObject());
+        colSEndereco.setCellValueFactory(cellData -> cellData.getValue().enderecoProperty());
+        colPorta.setCellValueFactory(cellData -> cellData.getValue().portaProperty().asObject());
+        servidores_tabela.setItems(servidoresData);
         microcontroladores_tabela.setItems(microcontroladoresData);
     }
 

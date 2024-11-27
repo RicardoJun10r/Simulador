@@ -20,10 +20,10 @@ import com.trabalho.shared.Comando;
 import com.trabalho.shared.ServerReq;
 import com.trabalho.util.Aparelho;
 import com.trabalho.util.ClientSocket;
+import com.trabalho.util.Conexao;
 
 import javafx.application.Platform;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.ObservableList;
 
 public class Servidor {
 
@@ -49,6 +49,10 @@ public class Servidor {
 
     private SimuladorController app;
 
+    private ObservableList<Aparelho> observableListAparelhos;
+
+    private ObservableList<Conexao> observableListServidores;
+
     public Servidor(String host, int porta, String endereco_broker, Boolean debug, SimuladorController app) {
         this.HOST = host;
         this.PORTA = porta;
@@ -58,6 +62,8 @@ public class Servidor {
         this.listenMethod();
         this.executor = Executors.newFixedThreadPool(N_THREADS);
         this.app = app;
+        this.observableListAparelhos = this.app.getMicrocontroladoresTable();
+        this.observableListServidores = this.app.getServidoresTable();
     }
 
     public Servidor(String host, int porta, String endereco_broker, Boolean debug) {
@@ -89,14 +95,9 @@ public class Servidor {
 
     private void add(Integer id, ClientSocket socket) {
         this.USUARIOS.put(id, socket);
-
         Platform.runLater(() -> {
-            this.app.getData().add(new Aparelho(
-                new SimpleIntegerProperty(id),
-                new SimpleStringProperty(socket.getSocketAddress().toString()),
-                new SimpleIntegerProperty(0),
-                new SimpleIntegerProperty(0)
-            ));
+            this.observableListServidores.add(
+                new Conexao(id, socket.getSocketAddress().toString(), socket.getPort()));
         });
     }
 
@@ -182,6 +183,9 @@ public class Servidor {
 
     private void unicast(Integer id, ServerReq msg) {
         this.USUARIOS.get(id).send(msg);
+        Platform.runLater(() -> {
+
+        });
     }
 
     private void listen(ClientSocket cliente_socket) {
@@ -192,11 +196,6 @@ public class Servidor {
                     System.out.println("DEBUG [" + cliente_socket.getSocketAddress().toString() + ":"
                             + cliente_socket.getPort() + "]: " + line.toString());
                 }
-                String responseText = line.getMensagem();
-                // Platform.runLater(() -> {
-                //     String existingText = app.getResponses().getText();
-                //     app.getResponses().setText(existingText + "\n" + responseText);
-                // });
 
                 if (line.getHeaders().equalsIgnoreCase("handshake")) {
                     if (this.USUARIOS.containsKey(hash(line.getPorta()))) {
@@ -220,11 +219,7 @@ public class Servidor {
                     this.broker.sendMessage(1, req);
                 }
                 if(line.getHeaders().equals("response")){
-                    final String receivedLine = line.getMensagem();
-                    // Platform.runLater(() -> {
-                    //     String existingText = app.getResponses().getText();
-                    //     app.getResponses().setText(existingText + "\n" + receivedLine);
-                    // });
+                    System.out.println(line.getMensagem());
                 }
             }
         }
@@ -233,7 +228,7 @@ public class Servidor {
     private void listenMethod() {
         this.listen_method = (topico, mensagem) -> {
             String response = new String(mensagem.getPayload());
-
+    
             if (DEBUG) {
                 System.out.println("\nUma mensagem foi recebida!" +
                         "\n\tData/Hora:    " + new Timestamp(System.currentTimeMillis()).toString() +
@@ -241,37 +236,44 @@ public class Servidor {
                         "\n\tMensagem: " + response +
                         "\n\tQoS:     " + mensagem.getQos() + "\n");
             }
-
-            // Platform.runLater(() -> {
-            //     String existingText = app.getResponses().getText();
-            //     app.getResponses().setText(existingText + "\n" + response);
-            // });
-
+    
             String[] parts = response.split("\\.");
-
+    
             if (parts.length >= 2) {
-                String idStr = parts[0];
-                String messageContent = response.substring(idStr.length() + 1);
-
-                int id = Integer.parseInt(idStr);
-
-                // app.addTopic(new App.Topic(id, topico));
-
+                int id = Integer.parseInt(parts[0]);
+                String messageContent = response.substring(parts[0].length() + 1);
+    
                 if (messageContent.startsWith("Sala com")) {
                     String[] lines = messageContent.split("\\*");
-                    // String totalAparelhosLine = lines[0]; // "Sala com [ N ] aparelhos"
-                    String ligadosLine = lines[1];
-                    String desligadosLine = lines[2];
-
-                    // int totalAparelhos = Integer.parseInt(totalAparelhosLine.replaceAll("[^0-9]", ""));
-                    int ligados = Integer.parseInt(ligadosLine.replaceAll("[^0-9]", ""));
-                    int desligados = Integer.parseInt(desligadosLine.replaceAll("[^0-9]", ""));
-
-                    int statusId = id;
-                    // app.updateStatus(new App.Status(statusId, ligados, desligados, topico));
+                    int ligados = Integer.parseInt(lines[1].replaceAll("[^0-9]", ""));
+                    int desligados = Integer.parseInt(lines[2].replaceAll("[^0-9]", ""));
+    
+                    Platform.runLater(() -> {
+                        Aparelho aparelho = null;
+                        for (Aparelho a : this.observableListAparelhos) {
+                            if (a.getId() == id) {
+                                aparelho = a;
+                                break;
+                            }
+                        }
+    
+                        if (aparelho == null) {
+                            this.observableListAparelhos.add(new Aparelho(
+                                    id,
+                                    this.serverSocket.getLocalSocketAddress().toString(),
+                                    ligados,
+                                    desligados
+                            ));
+                            System.out.println("Adicionado !");
+                        } else {
+                            aparelho.setAparelhosLigados(ligados);
+                            aparelho.setAparelhosDesligados(desligados);
+                            System.out.println("Atualizado !");
+                        }
+                    });
                 }
             }
-
+    
             if (!(parts[2].equals(String.valueOf(this.PORTA)))) {
                 this.USUARIOS.get(hash(Integer.parseInt(parts[1])))
                         .send(new ServerReq(this.HOST, this.PORTA, "response", response, -1, -1));
