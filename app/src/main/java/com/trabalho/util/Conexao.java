@@ -14,17 +14,23 @@ public class Conexao {
     public Conexao(SimpleIntegerProperty id, SimpleStringProperty endereco, SimpleIntegerProperty porta) {
         this.id = id;
         this.endereco = endereco;
+        this.porta = porta;
     }
 
     // Constructor
     public Conexao(int id, String endereco, int porta) {
         this.id = new SimpleIntegerProperty(id);
         this.endereco = new SimpleStringProperty(endereco);
+        this.porta = new SimpleIntegerProperty(porta);
     }
 
     // Getters
     public int getId() {
         return id.get();
+    }
+
+    public int getPorta() {
+        return porta.get();
     }
 
     public String getEndereco() {

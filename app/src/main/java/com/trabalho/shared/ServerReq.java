@@ -36,11 +36,9 @@ public class ServerReq extends Mensagem {
 
     @Override
     public String toString() {
-        return "ServerReq [opcao=" + opcao + ", microcontrolador_id=" + microcontrolador_id + ", toString()="
-                + super.toString() + ", getOpcao()=" + getOpcao() + ", getMicrocontrolador_id()="
-                + getMicrocontrolador_id() + ", getEndereco()=" + getEndereco() + ", getPorta()=" + getPorta()
-                + ", getHorario()=" + getHorario() + ", getHeaders()=" + getHeaders() + ", getMensagem()="
-                + getMensagem() + ", getClass()=" + getClass() + ", hashCode()=" + hashCode() + "]";
+        return "ServerReq [opcao=" + opcao + ", microcontrolador_id=" + microcontrolador_id + ", getEndereco()="
+                + getEndereco() + ", getPorta()=" + getPorta() + ", getHorario()=" + getHorario() + ", getHeaders()="
+                + getHeaders() + ", getMensagem()=" + getMensagem() + "]";
     }
 
 }

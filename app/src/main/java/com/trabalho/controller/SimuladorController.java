@@ -63,7 +63,7 @@ public class SimuladorController {
     private TableColumn<Conexao, Integer> colPorta;
 
     @FXML
-    private TableColumn<Conexao, Integer> colMId;
+    private TableColumn<Aparelho, Integer> colMId;
 
     @FXML
     private TableColumn<Aparelho, String> colMEndereco;
@@ -78,10 +78,14 @@ public class SimuladorController {
 
     private ObservableList<Conexao> servidoresData = FXCollections.observableArrayList();
 
-    public ObservableList<Aparelho> getMicrocontroladoresTable() { return this.microcontroladoresData; }
+    public ObservableList<Aparelho> getMicrocontroladoresTable() {
+        return this.microcontroladoresData;
+    }
 
-    public ObservableList<Conexao> getServidoresTable() { return this.servidoresData; }
-    
+    public ObservableList<Conexao> getServidoresTable() {
+        return this.servidoresData;
+    }
+
     @FXML
     private void initialize() {
         colMId.setCellValueFactory(cellData -> cellData.getValue().idProperty().asObject());
@@ -112,12 +116,76 @@ public class SimuladorController {
     }
 
     @FXML
+    void conexaoDialog(ActionEvent event) {
+        adicionarConexao();
+    }
+
+    @FXML
     void sair(ActionEvent event) {
         if (this.t_server != null)
             this.t_server.interrupt();
         if (this.t_queue != null)
             this.t_queue.interrupt();
         Platform.exit();
+    }
+
+    private void adicionarConexao() {
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Servidor");
+
+        Label instrucao = new Label(
+                "Aqui é possível adicionar conexões,\nconectando-se a outros servidores,\ncom isso sendo possível acessar\nmais salas.");
+
+        Label addressLabel = new Label("Endereço:");
+        TextField addressField = new TextField();
+
+        Label portLabel = new Label("Porta:");
+        TextField portField = new TextField();
+
+        Button conectar = new Button("Conectar");
+        Button cancelar = new Button("Cancelar");
+
+        conectar.setOnAction(e -> {
+            String endereco_nc = addressField.getText();
+            String portStr = portField.getText();
+
+            if (!endereco_nc.isEmpty() && !portStr.isEmpty()) {
+                try {
+                    int porta_nc = Integer.parseInt(portStr);
+
+                    Comando comando = new Comando(3, endereco_nc, porta_nc);
+
+                    this.servidor.addComando(comando);
+
+                    dialog.close();
+                } catch (NumberFormatException ex) {
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("Erro");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Porta deve ser um número inteiro.");
+                    alert.showAndWait();
+                }
+            } else {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Erro");
+                alert.setHeaderText(null);
+                alert.setContentText("Por favor, preencha todos os campos.");
+                alert.showAndWait();
+            }
+        });
+
+        cancelar.setOnAction(e -> {
+            dialog.close();
+        });
+
+        VBox vbox = new VBox(10, instrucao, addressLabel, addressField, portLabel, portField, conectar, cancelar);
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setPadding(new Insets(20));
+
+        Scene scene = new Scene(vbox, 300, 300);
+        dialog.setScene(scene);
+        dialog.showAndWait();
     }
 
     private void ligarServidorDialog() {
@@ -205,40 +273,116 @@ public class SimuladorController {
         Label instrucao = new Label(
                 "Aqui é possível acessar e controlar remotamente\nos servidores conectados a esse servidor,\n digite a opção que deseja e o destino da mensagem.");
 
-        Label addressLabel = new Label("Endereço:");
-        TextField addressField = new TextField();
+        // 1. Campo para pegar ID do servidor
+        Label idServidorLabel = new Label("ID do Servidor:");
+        TextField idServidorField = new TextField();
 
-        Label portLabel = new Label("Porta:");
-        TextField portField = new TextField();
+        // 2. ToggleGroup com as opções: desligar, ligar e descrever
+        Label opcoesLabel = new Label("Opções:");
+        ToggleGroup opcaoServidorGroup = new ToggleGroup();
+        RadioButton desligar = new RadioButton("Desligar");
+        RadioButton ligar = new RadioButton("Ligar");
+        RadioButton descrever = new RadioButton("Descrever");
+        desligar.setToggleGroup(opcaoServidorGroup);
+        ligar.setToggleGroup(opcaoServidorGroup);
+        descrever.setToggleGroup(opcaoServidorGroup);
 
-        Button conectar = new Button("Conectar");
+        VBox opcoesBox = new VBox(5, desligar, ligar, descrever);
+        opcoesBox.setAlignment(Pos.CENTER);
+
+        // 3. Outro ToggleGroup com as opções: uma sala e todas as salas
+        Label destinoLabel = new Label("Destino:");
+        ToggleGroup destinoGroup = new ToggleGroup();
+        RadioButton umaSala = new RadioButton("Uma Sala");
+        RadioButton todasSalas = new RadioButton("Todas as Salas");
+        umaSala.setToggleGroup(destinoGroup);
+        todasSalas.setToggleGroup(destinoGroup);
+
+        VBox destinoBox = new VBox(5, umaSala, todasSalas);
+        destinoBox.setAlignment(Pos.CENTER);
+
+        // Campo para digitar o ID do microcontrolador (aparece se 'uma sala' for
+        // selecionado)
+        Label idMicroLabel = new Label("ID do Microcontrolador:");
+        TextField idMicroField = new TextField();
+        idMicroLabel.setVisible(false);
+        idMicroField.setVisible(false);
+
+        destinoGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            if (newToggle == umaSala) {
+                idMicroLabel.setVisible(true);
+                idMicroField.setVisible(true);
+            } else {
+                idMicroLabel.setVisible(false);
+                idMicroField.setVisible(false);
+            }
+        });
+
+        // 4. Botões enviar e cancelar
+        Button enviar = new Button("Enviar");
         Button cancelar = new Button("Cancelar");
 
-        conectar.setOnAction(e -> {
-            String endereco_nc = addressField.getText();
-            String portStr = portField.getText();
+        enviar.setOnAction(e -> {
+            String idServidorStr = idServidorField.getText();
+            RadioButton opcaoSelecionada = (RadioButton) opcaoServidorGroup.getSelectedToggle();
+            RadioButton destinoSelecionado = (RadioButton) destinoGroup.getSelectedToggle();
 
-            if (!endereco_nc.isEmpty() && !portStr.isEmpty()) {
-                try {
-                    int porta_nc = Integer.parseInt(portStr);
-
-                    Comando comando = new Comando(3, endereco_nc, porta_nc);
-
-                    this.servidor.addComando(comando);
-
-                    dialog.close();
-                } catch (NumberFormatException ex) {
-                    Alert alert = new Alert(AlertType.ERROR);
-                    alert.setTitle("Erro");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Porta deve ser um número inteiro.");
-                    alert.showAndWait();
-                }
-            } else {
+            if (idServidorStr.isEmpty() || opcaoSelecionada == null || destinoSelecionado == null) {
                 Alert alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Erro");
                 alert.setHeaderText(null);
-                alert.setContentText("Por favor, preencha todos os campos.");
+                alert.setContentText("Por favor, preencha todos os campos e selecione as opções.");
+                alert.showAndWait();
+                return;
+            }
+
+            try {
+                int idServidor = Integer.parseInt(idServidorStr);
+                int op;
+                switch (opcaoSelecionada.getText()) {
+                    case "Desligar":
+                        op = 0;
+                        break;
+                    case "Ligar":
+                        op = 1;
+                        break;
+                    case "Descrever":
+                        op = 2;
+                        break;
+                    default:
+                        op = 2;
+                        break;
+                }
+
+                if (destinoSelecionado == umaSala) {
+                    String idMicroStr = idMicroField.getText();
+                    if (idMicroStr.isEmpty()) {
+                        Alert alert = new Alert(AlertType.ERROR);
+                        alert.setTitle("Erro");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Por favor, digite o ID do microcontrolador.");
+                        alert.showAndWait();
+                        return;
+                    }
+
+                    int idMicro = Integer.parseInt(idMicroStr);
+
+                    // Envia comando para um microcontrolador específico
+                    Comando comando = new Comando(1, op, idServidor, idMicro, "", -1);
+                    servidor.addComando(comando);
+                } else {
+                    // Envia comando para todos os microcontroladores
+                    Comando comando = new Comando(1, op, idServidor, -1, "", -1);
+                    servidor.addComando(comando);
+                }
+
+                dialog.close();
+
+            } catch (NumberFormatException ex) {
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Erro");
+                alert.setHeaderText(null);
+                alert.setContentText("ID do servidor e ID do microcontrolador devem ser números inteiros.");
                 alert.showAndWait();
             }
         });
@@ -247,11 +391,12 @@ public class SimuladorController {
             dialog.close();
         });
 
-        VBox vbox = new VBox(10, instrucao, addressLabel, addressField, portLabel, portField, conectar, cancelar);
+        VBox vbox = new VBox(10, instrucao, idServidorLabel, idServidorField, opcoesLabel, opcoesBox,
+                destinoLabel, destinoBox, idMicroLabel, idMicroField, enviar, cancelar);
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(20));
 
-        Scene scene = new Scene(vbox, 300, 300);
+        Scene scene = new Scene(vbox, 400, 500);
         dialog.setScene(scene);
         dialog.showAndWait();
     }

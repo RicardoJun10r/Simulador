@@ -17,7 +17,9 @@ import com.trabalho.broker.BrokerQueue;
 import com.trabalho.broker.IBrokerQueue;
 import com.trabalho.controller.SimuladorController;
 import com.trabalho.shared.Comando;
+import com.trabalho.shared.Mensagem;
 import com.trabalho.shared.ServerReq;
+import com.trabalho.shared.ServerRes;
 import com.trabalho.util.Aparelho;
 import com.trabalho.util.ClientSocket;
 import com.trabalho.util.Conexao;
@@ -190,17 +192,19 @@ public class Servidor {
 
     private void listen(ClientSocket cliente_socket) {
         if (cliente_socket != null) {
-            ServerReq line;
-            while ((line = (ServerReq) cliente_socket.read()) != null) {
+            Mensagem line;
+            while ((line = (Mensagem) cliente_socket.read()) != null) {
                 if (DEBUG) {
                     System.out.println("DEBUG [" + cliente_socket.getSocketAddress().toString() + ":"
                             + cliente_socket.getPort() + "]: " + line.toString());
                 }
+                
+                String headers = line.getHeaders();
 
-                if (line.getHeaders().equalsIgnoreCase("handshake")) {
+                if (headers.equalsIgnoreCase("handshake")) {
                     if (this.USUARIOS.containsKey(hash(line.getPorta()))) {
                         this.USUARIOS.get(hash(line.getPorta()))
-                                .send(new ServerReq(this.HOST, this.PORTA, "response", "Servidor já adicionado", 0, 0));
+                                .send(new ServerRes(line.getEndereco(), line.getPorta(), "response", "Servidor já adicionado", this.HOST, this.PORTA));
                     } else {
                         ClientSocket novo;
                         try {
@@ -208,18 +212,24 @@ public class Servidor {
                             novo = new ClientSocket(new Socket(line.getEndereco(), line.getPorta()), DEBUG);
                             add(hash(novo.getPort()), novo);
                             System.out.println("Enviando");
-                            novo.send(new ServerReq(this.HOST, this.PORTA, "response", "Conexão realizada!", 0, 0));
+                            novo.send(new ServerRes(line.getEndereco(), line.getPorta(), "response", "Conexão realizada!", this.HOST, this.PORTA));
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                     }
                 }
-                if(line.getHeaders().equals("request")){
-                    String req = line.getMicrocontrolador_id() + "." + line.getOpcao() + "." + line.getPorta();
-                    this.broker.sendMessage(1, req);
+                if(headers.equals("request")){
+                    if(line instanceof ServerReq){
+                        ServerReq serverReq = (ServerReq)line;
+                        String req = serverReq.getMicrocontrolador_id() + "." + serverReq.getOpcao() + "." + serverReq.getPorta();
+                        this.broker.sendMessage(1, req);
+                    }
                 }
-                if(line.getHeaders().equals("response")){
-                    System.out.println(line.getMensagem());
+                if(headers.equals("response")){
+                    if(line instanceof ServerRes){
+                        ServerRes response = (ServerRes)line;
+                        System.out.println(response.getMensagem());
+                    }
                 }
             }
         }

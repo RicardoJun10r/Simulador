@@ -5,11 +5,15 @@ import java.time.LocalDateTime;
 
 public class Mensagem implements Serializable {
 
-    @Override
-    public String toString() {
-        return "Mensagem [endereco=" + endereco + ", porta=" + porta + ", horario=" + horario + ", headers=" + headers
-                + ", mensagem=" + mensagem + "]";
-    }
+    private String endereco;
+
+    private int porta;
+
+    private LocalDateTime horario;
+    
+    private String headers;
+    
+    private String mensagem;
 
     public Mensagem(String endereco, int porta, String headers, String mensagem) {
         this.endereco = endereco;
@@ -23,16 +27,6 @@ public class Mensagem implements Serializable {
         this.horario = LocalDateTime.now();
         this.mensagem = mensagem;
     }
-
-    private String endereco;
-
-    private int porta;
-
-    private LocalDateTime horario;
-
-    private String headers;
-
-    private String mensagem;
 
     public String getEndereco() {
         return endereco;
@@ -72,6 +66,12 @@ public class Mensagem implements Serializable {
 
     public void setMensagem(String mensagem) {
         this.mensagem = mensagem;
+    }
+
+    @Override
+    public String toString() {
+        return "[ endereco = " + endereco + ", porta = " + porta + ", horario = " + horario + ", headers = " + headers
+                + ", mensagem = " + mensagem + " ]";
     }
 
 }

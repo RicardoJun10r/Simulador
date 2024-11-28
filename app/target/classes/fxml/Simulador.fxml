@@ -56,6 +56,16 @@
                   <Font name="Roboto" size="13.0" />
                </font>
             </Button>
+            <Button mnemonicParsing="false" onAction="#conexaoDialog" prefHeight="30.0"
+               prefWidth="158.0" style="-fx-background-color: #87CEEB;" styleClass="buttons"
+               text="Adicionar Conexão">
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
+               <font>
+                  <Font name="Roboto" size="13.0" />
+               </font>
+            </Button>
             <Button mnemonicParsing="false" onAction="#sair" prefHeight="30.0" prefWidth="184.0"
                style="-fx-background-color: #87CEEB;" styleClass="buttons" text="Sair">
                <VBox.margin>
