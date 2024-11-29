@@ -85,7 +85,7 @@ public class Servidor {
         this.executor = Executors.newFixedThreadPool(N_THREADS);
     }
 
-    public void initQueue(String endereco_broker){
+    public void initQueue(String endereco_broker) {
         String[] TOPICO = { "servidor", "microcontrolador" };
         this.broker = new BrokerQueue(endereco_broker, TOPICO, 0);
         this.listenMethod();
@@ -99,14 +99,15 @@ public class Servidor {
         this.USUARIOS.put(id, socket);
         Platform.runLater(() -> {
             this.observableListServidores.add(
-                new Conexao(id, socket.getSocketAddress().toString(), socket.getPort()));
+                    new Conexao(id, socket.getSocketAddress().toString(), socket.getPort()));
         });
     }
 
     private void server() {
-        
+
         try {
             this.serverSocket = new ServerSocket(this.PORTA, 0, InetAddress.getByName(this.HOST));
+            System.out.println("INICIANDO: [" + this.HOST + ":" + this.PORTA + "]");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -135,7 +136,7 @@ public class Servidor {
         }
     }
 
-    public void addComando(Comando novo){
+    public void addComando(Comando novo) {
         this.comandos.add(novo);
     }
 
@@ -146,13 +147,16 @@ public class Servidor {
                 novo_comando = this.comandos.take();
                 switch (novo_comando.getOpcao()) {
                     case 0: {
-                        this.broker.sendMessage(1, (novo_comando.getMicrocontrolador_id() + "." + novo_comando.getMicrocontrolador_opcao() + "." + this.PORTA));
+                        this.broker.sendMessage(1, (novo_comando.getMicrocontrolador_id() + "."
+                                + novo_comando.getMicrocontrolador_opcao() + "." + this.PORTA));
                         System.out.println("[*] Mensagem publicada.");
                         break;
                     }
                     case 1: {
-                        unicast(novo_comando.getServer_id(), new ServerReq(this.HOST, this.PORTA, "request", "SERVIDOR", novo_comando.getServer_opcao(),
-                                novo_comando.getMicrocontrolador_id()));
+                        unicast(novo_comando.getServer_id(),
+                                new ServerReq(this.HOST, this.PORTA, "request", "SERVIDOR",
+                                        novo_comando.getServer_opcao(),
+                                        novo_comando.getMicrocontrolador_id()));
                         break;
                     }
                     case 2: {
@@ -163,7 +167,8 @@ public class Servidor {
                     }
                     case 3: {
                         try {
-                            ClientSocket novo = new ClientSocket(new Socket(novo_comando.getEndereco(), novo_comando.getPorta()), DEBUG);
+                            ClientSocket novo = new ClientSocket(
+                                    new Socket(novo_comando.getEndereco(), novo_comando.getPorta()), DEBUG);
                             add(hash(novo_comando.getPorta()), novo);
                             novo.send(new ServerReq(this.HOST, this.PORTA, "handshake", "", 0, 0));
                         } catch (IOException e) {
@@ -176,18 +181,16 @@ public class Servidor {
                         break;
                     }
                 }
-    
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         } while (novo_comando.getOpcao() != -1);
     }
 
-    private void unicast(Integer id, ServerReq msg) {
+    private void unicast(Integer id, Mensagem msg) {
+        System.out.println(id + ": " + msg);
         this.USUARIOS.get(id).send(msg);
-        Platform.runLater(() -> {
-
-        });
     }
 
     private void listen(ClientSocket cliente_socket) {
@@ -198,37 +201,40 @@ public class Servidor {
                     System.out.println("DEBUG [" + cliente_socket.getSocketAddress().toString() + ":"
                             + cliente_socket.getPort() + "]: " + line.toString());
                 }
-                
+
                 String headers = line.getHeaders();
 
                 if (headers.equalsIgnoreCase("handshake")) {
                     if (this.USUARIOS.containsKey(hash(line.getPorta()))) {
                         this.USUARIOS.get(hash(line.getPorta()))
-                                .send(new ServerRes(line.getEndereco(), line.getPorta(), "response", "Servidor já adicionado", this.HOST, this.PORTA));
+                                .send(new ServerRes(line.getEndereco(), line.getPorta(), "response",
+                                        "Servidor já adicionado", this.HOST, this.PORTA));
                     } else {
                         ClientSocket novo;
                         try {
                             System.out.println("Adicionando");
                             novo = new ClientSocket(new Socket(line.getEndereco(), line.getPorta()), DEBUG);
                             add(hash(novo.getPort()), novo);
-                            System.out.println("Enviando");
-                            novo.send(new ServerRes(line.getEndereco(), line.getPorta(), "response", "Conexão realizada!", this.HOST, this.PORTA));
+                            novo.send(new ServerRes(line.getEndereco(), line.getPorta(), "response",
+                                    "Conexão realizada!", this.HOST, this.PORTA));
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                     }
                 }
-                if(headers.equals("request")){
-                    if(line instanceof ServerReq){
-                        ServerReq serverReq = (ServerReq)line;
-                        String req = serverReq.getMicrocontrolador_id() + "." + serverReq.getOpcao() + "." + serverReq.getPorta();
+                if (headers.equals("request")) {
+                    if (line instanceof ServerReq) {
+                        ServerReq serverReq = (ServerReq) line;
+                        String req = serverReq.getMicrocontrolador_id() + "." + serverReq.getOpcao() + "."
+                                + serverReq.getPorta();
                         this.broker.sendMessage(1, req);
                     }
                 }
-                if(headers.equals("response")){
-                    if(line instanceof ServerRes){
-                        ServerRes response = (ServerRes)line;
+                if (headers.equals("response")) {
+                    if (line instanceof ServerRes) {
+                        ServerRes response = (ServerRes) line;
                         System.out.println(response.getMensagem());
+                        this.atualizarTabela(response);
                     }
                 }
             }
@@ -238,7 +244,7 @@ public class Servidor {
     private void listenMethod() {
         this.listen_method = (topico, mensagem) -> {
             String response = new String(mensagem.getPayload());
-    
+
             if (DEBUG) {
                 System.out.println("\nUma mensagem foi recebida!" +
                         "\n\tData/Hora:    " + new Timestamp(System.currentTimeMillis()).toString() +
@@ -246,18 +252,19 @@ public class Servidor {
                         "\n\tMensagem: " + response +
                         "\n\tQoS:     " + mensagem.getQos() + "\n");
             }
-    
-            String[] parts = response.split("\\.");
-    
-            if (parts.length >= 2) {
+
+            String[] parts = response.split("\\.", 3);
+
+            if (parts.length >= 3) {
                 int id = Integer.parseInt(parts[0]);
-                String messageContent = response.substring(parts[0].length() + 1);
-    
+                String messageContent = parts[1];
+                String porta = parts[2];
+
                 if (messageContent.startsWith("Sala com")) {
                     String[] lines = messageContent.split("\\*");
                     int ligados = Integer.parseInt(lines[1].replaceAll("[^0-9]", ""));
                     int desligados = Integer.parseInt(lines[2].replaceAll("[^0-9]", ""));
-    
+
                     Platform.runLater(() -> {
                         Aparelho aparelho = null;
                         for (Aparelho a : this.observableListAparelhos) {
@@ -266,14 +273,13 @@ public class Servidor {
                                 break;
                             }
                         }
-    
+
                         if (aparelho == null) {
                             this.observableListAparelhos.add(new Aparelho(
                                     id,
                                     this.serverSocket.getLocalSocketAddress().toString(),
                                     ligados,
-                                    desligados
-                            ));
+                                    desligados));
                             System.out.println("Adicionado !");
                         } else {
                             aparelho.setAparelhosLigados(ligados);
@@ -282,21 +288,60 @@ public class Servidor {
                         }
                     });
                 }
-            }
-    
-            if (!(parts[2].equals(String.valueOf(this.PORTA)))) {
-                this.USUARIOS.get(hash(Integer.parseInt(parts[1])))
-                        .send(new ServerReq(this.HOST, this.PORTA, "response", response, -1, -1));
+
+                if (!(porta.equals(String.valueOf(this.PORTA)))) {
+                    this.USUARIOS.get(hash(Integer.parseInt(porta)))
+                            .send(new ServerRes(this.HOST, Integer.valueOf(porta), "response", response, this.HOST,
+                                    this.PORTA));
+                }
+            } else {
+                System.err.println("Received message in unexpected format: " + response);
             }
         };
+
         this.broker.setListen(listen_method);
     }
 
-    public void startServer(){
+    private void atualizarTabela(ServerRes res) {
+        String[] parts = res.getMensagem().split("\\.", 3);
+        int id = Integer.parseInt(parts[0]);
+        String messageContent = parts[1];
+
+        if (messageContent.startsWith("Sala com")) {
+            String[] lines = messageContent.split("\\*");
+            int ligados = Integer.parseInt(lines[1].replaceAll("[^0-9]", ""));
+            int desligados = Integer.parseInt(lines[2].replaceAll("[^0-9]", ""));
+
+            Platform.runLater(() -> {
+                Aparelho aparelho = null;
+                for (Aparelho a : this.observableListAparelhos) {
+                    if (a.getId() == id) {
+                        aparelho = a;
+                        break;
+                    }
+                }
+
+                if (aparelho == null) {
+                    this.observableListAparelhos.add(new Aparelho(
+                            id,
+                            "/" + res.getEndereco_response() + ":" + res.getPorta_response(),
+                            ligados,
+                            desligados));
+                    System.out.println("Adicionado !");
+                } else {
+                    aparelho.setAparelhosLigados(ligados);
+                    aparelho.setAparelhosDesligados(desligados);
+                    System.out.println("Atualizado !");
+                }
+            });
+        }
+    }
+
+    public void startServer() {
         this.server();
     }
 
-    public void startQueue(){
+    public void startQueue() {
         this.broker.start();
     }
 

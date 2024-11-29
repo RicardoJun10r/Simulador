@@ -368,11 +368,11 @@ public class SimuladorController {
                     int idMicro = Integer.parseInt(idMicroStr);
 
                     // Envia comando para um microcontrolador específico
-                    Comando comando = new Comando(1, op, idServidor, idMicro, "", -1);
+                    Comando comando = new Comando(1, idMicro, idServidor, op, op);
                     servidor.addComando(comando);
                 } else {
                     // Envia comando para todos os microcontroladores
-                    Comando comando = new Comando(1, op, idServidor, -1, "", -1);
+                    Comando comando = new Comando(1, -1, idServidor, op, op);
                     servidor.addComando(comando);
                 }
 
