@@ -205,8 +205,9 @@ public class Servidor {
                 String headers = line.getHeaders();
 
                 if (headers.equalsIgnoreCase("handshake")) {
-                    if (this.USUARIOS.containsKey(hash(line.getPorta()))) {
-                        this.USUARIOS.get(hash(line.getPorta()))
+                    Integer hashcode = hash(line.getPorta());
+                    if (this.USUARIOS.containsKey(hashcode)) {
+                        this.USUARIOS.get(hashcode)
                                 .send(new ServerRes(line.getEndereco(), line.getPorta(), "response",
                                         "Servidor já adicionado", this.HOST, this.PORTA));
                     } else {
@@ -214,7 +215,7 @@ public class Servidor {
                         try {
                             System.out.println("Adicionando");
                             novo = new ClientSocket(new Socket(line.getEndereco(), line.getPorta()), DEBUG);
-                            add(hash(novo.getPort()), novo);
+                            add(hashcode, novo);
                             novo.send(new ServerRes(line.getEndereco(), line.getPorta(), "response",
                                     "Conexão realizada!", this.HOST, this.PORTA));
                         } catch (IOException e) {
