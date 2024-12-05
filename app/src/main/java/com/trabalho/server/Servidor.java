@@ -126,7 +126,6 @@ public class Servidor {
         while (true) {
             try {
                 ClientSocket socket = new ClientSocket(this.serverSocket.accept(), DEBUG);
-                add(hash(socket.getPort()), socket);
                 this.executor.execute(() -> {
                     this.listen(socket);
                 });
@@ -170,7 +169,7 @@ public class Servidor {
                             ClientSocket novo = new ClientSocket(
                                     new Socket(novo_comando.getEndereco(), novo_comando.getPorta()), DEBUG);
                             add(hash(novo_comando.getPorta()), novo);
-                            novo.send(new ServerReq(this.HOST, this.PORTA, "handshake", "", 0, 0));
+                            novo.send(new ServerReq(this.HOST, this.PORTA, "ping", "", 0, 0));
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -193,6 +192,17 @@ public class Servidor {
         this.USUARIOS.get(id).send(msg);
     }
 
+    private void unicast(String host, Integer port, String msg, String header) {
+        ClientSocket clientSocket;
+        try {
+            clientSocket = new ClientSocket(new Socket(host, port), false);
+            clientSocket.send(new ServerRes(host, port, header,
+                    msg, this.HOST, this.PORTA));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void listen(ClientSocket cliente_socket) {
         if (cliente_socket != null) {
             Mensagem line;
@@ -204,23 +214,20 @@ public class Servidor {
 
                 String headers = line.getHeaders();
 
-                if (headers.equalsIgnoreCase("handshake")) {
-                    Integer hashcode = hash(line.getPorta());
-                    if (this.USUARIOS.containsKey(hashcode)) {
-                        this.USUARIOS.get(hashcode)
-                                .send(new ServerRes(line.getEndereco(), line.getPorta(), "response",
-                                        "Servidor já adicionado", this.HOST, this.PORTA));
-                    } else {
-                        ClientSocket novo;
-                        try {
-                            System.out.println("Adicionando");
-                            novo = new ClientSocket(new Socket(line.getEndereco(), line.getPorta()), DEBUG);
-                            add(hashcode, novo);
-                            novo.send(new ServerRes(line.getEndereco(), line.getPorta(), "response",
-                                    "Conexão realizada!", this.HOST, this.PORTA));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                if (headers.equalsIgnoreCase("ping")) {
+                    ClientSocket novo;
+                    try {
+                        novo = new ClientSocket(new Socket(line.getEndereco(), line.getPorta()), DEBUG);
+                        novo.send(new ServerRes(line.getEndereco(), line.getPorta(), "pong",
+                                "Servidor Alcancado!", this.HOST, this.PORTA));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (headers.equalsIgnoreCase("pong")) {
+                    if (line instanceof ServerRes) {
+                        ServerRes response = (ServerRes) line;
+                        System.out.println(response.getMensagem());
                     }
                 }
                 if (headers.equals("request")) {
@@ -291,9 +298,7 @@ public class Servidor {
                 }
 
                 if (!(porta.equals(String.valueOf(this.PORTA)))) {
-                    this.USUARIOS.get(hash(Integer.parseInt(porta)))
-                            .send(new ServerRes(this.HOST, Integer.valueOf(porta), "response", response, this.HOST,
-                                    this.PORTA));
+                    this.unicast(this.HOST, Integer.parseInt(porta), response, "response");
                 }
             } else {
                 System.err.println("Received message in unexpected format: " + response);
