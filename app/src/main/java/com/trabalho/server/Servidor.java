@@ -29,6 +29,10 @@ import javafx.collections.ObservableList;
 
 public class Servidor {
 
+    private final String HOST_WEB = "localhost";
+
+    private final Integer PORT_WEB = 4000;
+
     private final Boolean DEBUG;
 
     private final String HOST;
@@ -185,6 +189,25 @@ public class Servidor {
                 e.printStackTrace();
             }
         } while (novo_comando.getOpcao() != -1);
+    }
+
+    private void sendweb(Mensagem msg){
+        if(msg instanceof ServerReq){
+            ServerReq response = (ServerReq) msg;
+            try {
+                new ClientSocket(new Socket(this.HOST_WEB, this.PORT_WEB), DEBUG).send(response);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if(msg instanceof ServerRes){
+            ServerRes response = (ServerRes) msg;
+            try {
+                new ClientSocket(new Socket(this.HOST_WEB, this.PORT_WEB), DEBUG).send(response);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void unicast(Integer id, Mensagem msg) {

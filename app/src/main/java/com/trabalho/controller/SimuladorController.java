@@ -1,11 +1,14 @@
 package com.trabalho.controller;
 
+import java.util.stream.Collectors;
+
 import com.trabalho.server.Servidor;
 import com.trabalho.shared.Comando;
 import com.trabalho.util.Aparelho;
 import com.trabalho.util.Conexao;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import javafx.application.Platform;
@@ -17,6 +20,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TableView;
@@ -74,6 +78,8 @@ public class SimuladorController {
     @FXML
     private TableColumn<Aparelho, Integer> colAparelhosDesligados;
 
+    private ObservableList<Integer> idServidorList = FXCollections.observableArrayList();
+
     private ObservableList<Aparelho> microcontroladoresData = FXCollections.observableArrayList();
 
     private ObservableList<Conexao> servidoresData = FXCollections.observableArrayList();
@@ -98,6 +104,10 @@ public class SimuladorController {
         colPorta.setCellValueFactory(cellData -> cellData.getValue().portaProperty().asObject());
         servidores_tabela.setItems(servidoresData);
         microcontroladores_tabela.setItems(microcontroladoresData);
+        servidoresData.addListener((ListChangeListener<Conexao>) change -> {
+            idServidorList.setAll(servidoresData.stream().map(Conexao::getId).collect(Collectors.toList()));
+        });
+        idServidorList.setAll(servidoresData.stream().map(Conexao::getId).collect(Collectors.toList()));
     }
 
     @FXML
@@ -273,9 +283,10 @@ public class SimuladorController {
         Label instrucao = new Label(
                 "Aqui é possível acessar e controlar remotamente\nos servidores conectados a esse servidor,\n digite a opção que deseja e o destino da mensagem.");
 
-        // 1. Campo para pegar ID do servidor
+        // 1. Campo para selecionar o ID do servidor
         Label idServidorLabel = new Label("ID do Servidor:");
-        TextField idServidorField = new TextField();
+        ComboBox<Integer> idServidorComboBox = new ComboBox<>();
+        idServidorComboBox.setItems(idServidorList);
 
         // 2. ToggleGroup com as opções: desligar, ligar e descrever
         Label opcoesLabel = new Label("Opções:");
@@ -323,11 +334,11 @@ public class SimuladorController {
         Button cancelar = new Button("Cancelar");
 
         enviar.setOnAction(e -> {
-            String idServidorStr = idServidorField.getText();
+            Integer idServidor = idServidorComboBox.getValue();
             RadioButton opcaoSelecionada = (RadioButton) opcaoServidorGroup.getSelectedToggle();
             RadioButton destinoSelecionado = (RadioButton) destinoGroup.getSelectedToggle();
 
-            if (idServidorStr.isEmpty() || opcaoSelecionada == null || destinoSelecionado == null) {
+            if (idServidor == null || opcaoSelecionada == null || destinoSelecionado == null) {
                 Alert alert = new Alert(AlertType.ERROR);
                 alert.setTitle("Erro");
                 alert.setHeaderText(null);
@@ -336,62 +347,62 @@ public class SimuladorController {
                 return;
             }
 
-            try {
-                int idServidor = Integer.parseInt(idServidorStr);
-                int op;
-                switch (opcaoSelecionada.getText()) {
-                    case "Desligar":
-                        op = 0;
-                        break;
-                    case "Ligar":
-                        op = 1;
-                        break;
-                    case "Descrever":
-                        op = 2;
-                        break;
-                    default:
-                        op = 2;
-                        break;
-                }
-
-                if (destinoSelecionado == umaSala) {
-                    String idMicroStr = idMicroField.getText();
-                    if (idMicroStr.isEmpty()) {
-                        Alert alert = new Alert(AlertType.ERROR);
-                        alert.setTitle("Erro");
-                        alert.setHeaderText(null);
-                        alert.setContentText("Por favor, digite o ID do microcontrolador.");
-                        alert.showAndWait();
-                        return;
-                    }
-
-                    int idMicro = Integer.parseInt(idMicroStr);
-
-                    // Envia comando para um microcontrolador específico
-                    Comando comando = new Comando(1, idMicro, idServidor, op, op);
-                    servidor.addComando(comando);
-                } else {
-                    // Envia comando para todos os microcontroladores
-                    Comando comando = new Comando(1, -1, idServidor, op, op);
-                    servidor.addComando(comando);
-                }
-
-                dialog.close();
-
-            } catch (NumberFormatException ex) {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle("Erro");
-                alert.setHeaderText(null);
-                alert.setContentText("ID do servidor e ID do microcontrolador devem ser números inteiros.");
-                alert.showAndWait();
+            int op;
+            switch (opcaoSelecionada.getText()) {
+                case "Desligar":
+                    op = 0;
+                    break;
+                case "Ligar":
+                    op = 1;
+                    break;
+                case "Descrever":
+                    op = 2;
+                    break;
+                default:
+                    op = 2;
+                    break;
             }
+
+            if (destinoSelecionado == umaSala) {
+                String idMicroStr = idMicroField.getText();
+                if (idMicroStr.isEmpty()) {
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("Erro");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Por favor, digite o ID do microcontrolador.");
+                    alert.showAndWait();
+                    return;
+                }
+
+                int idMicro;
+                try {
+                    idMicro = Integer.parseInt(idMicroStr);
+                } catch (NumberFormatException ex) {
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("Erro");
+                    alert.setHeaderText(null);
+                    alert.setContentText("ID do microcontrolador deve ser um número inteiro.");
+                    alert.showAndWait();
+                    return;
+                }
+
+                // Envia comando para um microcontrolador específico
+                Comando comando = new Comando(1, idMicro, idServidor, op, op);
+                servidor.addComando(comando);
+            } else {
+                // Envia comando para todos os microcontroladores
+                Comando comando = new Comando(1, -1, idServidor, op, op);
+                servidor.addComando(comando);
+            }
+
+            dialog.close();
         });
 
         cancelar.setOnAction(e -> {
             dialog.close();
         });
 
-        VBox vbox = new VBox(10, instrucao, idServidorLabel, idServidorField, opcoesLabel, opcoesBox,
+        VBox vbox = new VBox(10, instrucao, idServidorLabel, idServidorComboBox, opcoesLabel, opcoesBox,
                 destinoLabel, destinoBox, idMicroLabel, idMicroField, enviar, cancelar);
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(20));
