@@ -153,6 +153,12 @@ public class Servidor {
                         this.broker.sendMessage(1, (novo_comando.getMicrocontrolador_id() + "."
                                 + novo_comando.getMicrocontrolador_opcao() + "." + this.PORTA));
                         System.out.println("[*] Mensagem publicada.");
+
+                        this.sendweb(new ServerReq(this.HOST, this.PORTA,
+                                "SERVIDOR-MICROCONTROLADOR",
+                                "CONTROLANDO SALA",
+                                novo_comando.getMicrocontrolador_opcao(),
+                                novo_comando.getMicrocontrolador_id()));
                         break;
                     }
                     case 1: {
@@ -160,6 +166,7 @@ public class Servidor {
                                 new ServerReq(this.HOST, this.PORTA, "request", "SERVIDOR",
                                         novo_comando.getServer_opcao(),
                                         novo_comando.getMicrocontrolador_id()));
+                                        
                         break;
                     }
                     case 2: {
@@ -191,8 +198,8 @@ public class Servidor {
         } while (novo_comando.getOpcao() != -1);
     }
 
-    private void sendweb(Mensagem msg){
-        if(msg instanceof ServerReq){
+    private void sendweb(Mensagem msg) {
+        if (msg instanceof ServerReq) {
             ServerReq response = (ServerReq) msg;
             try {
                 new ClientSocket(new Socket(this.HOST_WEB, this.PORT_WEB), DEBUG).send(response);
@@ -200,7 +207,7 @@ public class Servidor {
                 e.printStackTrace();
             }
         }
-        if(msg instanceof ServerRes){
+        if (msg instanceof ServerRes) {
             ServerRes response = (ServerRes) msg;
             try {
                 new ClientSocket(new Socket(this.HOST_WEB, this.PORT_WEB), DEBUG).send(response);

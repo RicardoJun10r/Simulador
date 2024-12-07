@@ -148,10 +148,10 @@ public class SimuladorController {
                 "Aqui é possível adicionar conexões,\nconectando-se a outros servidores,\ncom isso sendo possível acessar\nmais salas.");
 
         Label addressLabel = new Label("Endereço:");
-        TextField addressField = new TextField();
+        TextField addressField = new TextField("127.0.0.1");
 
         Label portLabel = new Label("Porta:");
-        TextField portField = new TextField();
+        TextField portField = new TextField("5001");
 
         Button conectar = new Button("Conectar");
         Button cancelar = new Button("Cancelar");
