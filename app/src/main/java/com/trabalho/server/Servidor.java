@@ -5,13 +5,16 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 import com.trabalho.broker.BrokerQueue;
 import com.trabalho.broker.IBrokerQueue;
@@ -59,13 +62,15 @@ public class Servidor {
 
     private ObservableList<Conexao> observableListServidores;
 
+    private List<Integer> microcontroladores_ids = Collections.synchronizedList(new ArrayList<>());
+
     public Servidor(String host, int porta, String endereco_broker, Boolean debug, SimuladorController app) {
         this.HOST = host;
         this.PORTA = porta;
         String[] TOPICO = { "servidor", "microcontrolador" };
         this.broker = new BrokerQueue(endereco_broker, TOPICO, 0);
         this.DEBUG = debug;
-        this.listenMethod();
+        this.listenMicrocontrolador();
         this.executor = Executors.newFixedThreadPool(N_THREADS);
         this.app = app;
         this.observableListAparelhos = this.app.getMicrocontroladoresTable();
@@ -78,7 +83,7 @@ public class Servidor {
         String[] TOPICO = { "servidor", "microcontrolador" };
         this.broker = new BrokerQueue(endereco_broker, TOPICO, 0);
         this.DEBUG = debug;
-        this.listenMethod();
+        this.listenMicrocontrolador();
         this.executor = Executors.newFixedThreadPool(N_THREADS);
     }
 
@@ -92,7 +97,7 @@ public class Servidor {
     public void initQueue(String endereco_broker) {
         String[] TOPICO = { "servidor", "microcontrolador" };
         this.broker = new BrokerQueue(endereco_broker, TOPICO, 0);
-        this.listenMethod();
+        this.listenMicrocontrolador();
     }
 
     private Integer hash(Integer num) {
@@ -115,6 +120,9 @@ public class Servidor {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        
+        this.sendweb(new ServerRes(
+            HOST, PORTA, "start", "INICIANDO SERVIDOR", "0", 0));
 
         this.executor.execute(() -> {
             serverLoop();
@@ -143,6 +151,14 @@ public class Servidor {
         this.comandos.add(novo);
     }
 
+    private String metaDados(){
+        if(this.microcontroladores_ids.isEmpty()){
+            return "";
+        }else {
+            return this.microcontroladores_ids.stream().map(String::valueOf).collect(Collectors.joining("."));
+        }
+    }
+
     private void painel() {
         Comando novo_comando = new Comando();
         do {
@@ -150,12 +166,13 @@ public class Servidor {
                 novo_comando = this.comandos.take();
                 switch (novo_comando.getOpcao()) {
                     case 0: {
+                        System.out.println("[*] Mensagem publicada.0");
                         this.broker.sendMessage(1, (novo_comando.getMicrocontrolador_id() + "."
                                 + novo_comando.getMicrocontrolador_opcao() + "." + this.PORTA));
                         System.out.println("[*] Mensagem publicada.");
 
                         this.sendweb(new ServerReq(this.HOST, this.PORTA,
-                                "SERVIDOR-MICROCONTROLADOR",
+                                "server-microcontroller." + metaDados(),
                                 "CONTROLANDO SALA",
                                 novo_comando.getMicrocontrolador_opcao(),
                                 novo_comando.getMicrocontrolador_id()));
@@ -163,10 +180,12 @@ public class Servidor {
                     }
                     case 1: {
                         unicast(novo_comando.getServer_id(),
-                                new ServerReq(this.HOST, this.PORTA, "request", "SERVIDOR",
+                                new ServerReq(this.HOST, this.PORTA, "request." + metaDados(), "SERVIDOR",
                                         novo_comando.getServer_opcao(),
                                         novo_comando.getMicrocontrolador_id()));
-                                        
+                        ClientSocket ex = this.USUARIOS.get(novo_comando.getServer_id());
+                        this.sendweb(new ServerRes(
+                            HOST, PORTA, "server-server", "req." + novo_comando.getServer_opcao(), ex.getSocketAddress().toString(), ex.getPort()));
                         break;
                     }
                     case 2: {
@@ -181,6 +200,8 @@ public class Servidor {
                                     new Socket(novo_comando.getEndereco(), novo_comando.getPorta()), DEBUG);
                             add(hash(novo_comando.getPorta()), novo);
                             novo.send(new ServerReq(this.HOST, this.PORTA, "ping", "", 0, 0));
+                            this.sendweb(new ServerRes(
+                                HOST, PORTA, "server-server." + metaDados(), "INICIANDO CONEXAO", novo_comando.getEndereco(), novo_comando.getPorta()));
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -199,22 +220,17 @@ public class Servidor {
     }
 
     private void sendweb(Mensagem msg) {
-        if (msg instanceof ServerReq) {
-            ServerReq response = (ServerReq) msg;
-            try {
-                new ClientSocket(new Socket(this.HOST_WEB, this.PORT_WEB), DEBUG).send(response);
-            } catch (IOException e) {
-                e.printStackTrace();
+        new Thread(() -> {
+            System.out.println("WEB");
+            if (msg instanceof ServerReq) {
+                ServerReq response = (ServerReq) msg;
+                ClientSocket.enviarComoJson(response);
             }
-        }
-        if (msg instanceof ServerRes) {
-            ServerRes response = (ServerRes) msg;
-            try {
-                new ClientSocket(new Socket(this.HOST_WEB, this.PORT_WEB), DEBUG).send(response);
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (msg instanceof ServerRes) {
+                ServerRes response = (ServerRes) msg;
+                ClientSocket.enviarComoJson(response);
             }
-        }
+        }).start();
     }
 
     private void unicast(Integer id, Mensagem msg) {
@@ -279,7 +295,7 @@ public class Servidor {
         }
     }
 
-    private void listenMethod() {
+    private void listenMicrocontrolador() {
         this.listen_method = (topico, mensagem) -> {
             String response = new String(mensagem.getPayload());
 
@@ -295,6 +311,10 @@ public class Servidor {
 
             if (parts.length >= 3) {
                 int id = Integer.parseInt(parts[0]);
+
+                if(!this.microcontroladores_ids.contains(id)) 
+                    this.microcontroladores_ids.add(id);
+                
                 String messageContent = parts[1];
                 String porta = parts[2];
 

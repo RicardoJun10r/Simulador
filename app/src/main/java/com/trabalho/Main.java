@@ -11,7 +11,7 @@ public class Main extends Application{
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Simulador.fxml"));
         Scene scene = new Scene(loader.load());
 
-        primaryStage.setTitle("Aplicativo JavaFX com MaterialFX");
+        primaryStage.setTitle("Aplicativo");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
