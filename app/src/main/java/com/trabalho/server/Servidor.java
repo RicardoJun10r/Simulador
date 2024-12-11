@@ -32,10 +32,6 @@ import javafx.collections.ObservableList;
 
 public class Servidor {
 
-    private final String HOST_WEB = "localhost";
-
-    private final Integer PORT_WEB = 4000;
-
     private final Boolean DEBUG;
 
     private final String HOST;
@@ -185,7 +181,7 @@ public class Servidor {
                                         novo_comando.getMicrocontrolador_id()));
                         ClientSocket ex = this.USUARIOS.get(novo_comando.getServer_id());
                         this.sendweb(new ServerRes(
-                            HOST, PORTA, "server-server", "req." + metaDados() + "." + novo_comando.getServer_opcao(), ex.getSocketAddress().toString(), ex.getPort()));
+                            HOST, PORTA, "server-server", "CONTROLANDO SERVIDOR." + metaDados() + "." + novo_comando.getServer_opcao(), ex.getSocketAddress().toString(), ex.getPort()));
                         break;
                     }
                     case 2: {
