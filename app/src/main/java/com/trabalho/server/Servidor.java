@@ -180,12 +180,12 @@ public class Servidor {
                     }
                     case 1: {
                         unicast(novo_comando.getServer_id(),
-                                new ServerReq(this.HOST, this.PORTA, "request." + metaDados(), "SERVIDOR",
+                                new ServerReq(this.HOST, this.PORTA, "request", "SERVIDOR",
                                         novo_comando.getServer_opcao(),
                                         novo_comando.getMicrocontrolador_id()));
                         ClientSocket ex = this.USUARIOS.get(novo_comando.getServer_id());
                         this.sendweb(new ServerRes(
-                            HOST, PORTA, "server-server", "req." + novo_comando.getServer_opcao(), ex.getSocketAddress().toString(), ex.getPort()));
+                            HOST, PORTA, "server-server", "req." + metaDados() + "." + novo_comando.getServer_opcao(), ex.getSocketAddress().toString(), ex.getPort()));
                         break;
                     }
                     case 2: {
