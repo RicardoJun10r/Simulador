@@ -1,17 +1,9 @@
 package com.trabalho.controller;
 
 import java.util.stream.Collectors;
-
-import com.trabalho.server.Servidor;
-import com.trabalho.shared.Comando;
-import com.trabalho.util.Aparelho;
-import com.trabalho.util.Conexao;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.scene.control.TableColumn;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -23,6 +15,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
@@ -33,192 +29,347 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import com.trabalho.server.Servidor;
+import com.trabalho.shared.Comando;
+import com.trabalho.util.Aparelho;
+import com.trabalho.util.Conexao;
+
 public class SimuladorController {
 
-    private String endereco;
-
-    private int porta;
-
-    private Servidor servidor;
-
-    private Thread t_server;
-
-    private Thread t_queue;
-
+    /* =================== FXML =================== */
     @FXML
     private Circle circle_toogle;
-
     @FXML
     private Label endereco_porta_lb;
-
     @FXML
     private TableView<Aparelho> microcontroladores_tabela;
-
     @FXML
     private TableView<Conexao> servidores_tabela;
-
     @FXML
     private TableColumn<Conexao, Integer> colSId;
-
     @FXML
     private TableColumn<Conexao, String> colSEndereco;
-
     @FXML
     private TableColumn<Conexao, Integer> colPorta;
-
     @FXML
     private TableColumn<Aparelho, Integer> colMId;
-
     @FXML
     private TableColumn<Aparelho, String> colMEndereco;
-
     @FXML
     private TableColumn<Aparelho, Integer> colAparelhosLigados;
-
     @FXML
     private TableColumn<Aparelho, Integer> colAparelhosDesligados;
 
-    private ObservableList<Integer> idServidorList = FXCollections.observableArrayList();
+    /* =================== Variáveis de Instância =================== */
+    private String endereco;
+    private int porta;
+    private Servidor servidor;
+    private Thread t_server;
+    private Thread t_queue;
 
-    private ObservableList<Aparelho> microcontroladoresData = FXCollections.observableArrayList();
+    private final ObservableList<Integer> idServidorList = FXCollections.observableArrayList();
+    private final ObservableList<Aparelho> microcontroladoresData = FXCollections.observableArrayList();
+    private final ObservableList<Conexao> servidoresData = FXCollections.observableArrayList();
 
-    private ObservableList<Conexao> servidoresData = FXCollections.observableArrayList();
+    /* =================== Constantes de Estilo =================== */
+    private static final String DIALOG_STYLE = "-fx-background-color: #F2F2F2;";
+    private static final String CARD_STYLE = """
+        -fx-background-color: #FFFFFF;
+        -fx-border-color: #7F534B;
+        -fx-border-radius: 8;
+        -fx-background-radius: 8;
+        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 0);
+        -fx-padding: 15;
+        """;
+    private static final String BUTTON_STYLE = """
+        -fx-background-color: #7F534B;
+        -fx-text-fill: #E5F2C9;
+        -fx-font-weight: bold;
+        -fx-padding: 10 20;
+        -fx-background-radius: 6;
+        -fx-cursor: hand;
+        """;
+    private static final String CANCEL_BUTTON_STYLE = """
+        -fx-background-color: #8C705F;
+        -fx-text-fill: #E5F2C9;
+        -fx-font-weight: bold;
+        -fx-padding: 10 20;
+        -fx-background-radius: 6;
+        -fx-cursor: hand;
+        """;
+    private static final String TITLE_STYLE = """
+        -fx-font-size: 20px;
+        -fx-font-weight: bold;
+        -fx-text-fill: #1E1A1D;
+        -fx-padding: 0 0 10 0;
+        """;
+    private static final String LABEL_STYLE = """
+        -fx-font-size: 14px;
+        -fx-font-weight: bold;
+        -fx-text-fill: #1E1A1D;
+        """;
+    private static final String TABLE_STYLE = """
+        -fx-background-color: #1E1A1D;
+        -fx-border-color: #7F534B;
+        -fx-border-radius: 8;
+        -fx-background-radius: 8;
+        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 0);
+        -fx-text-fill: #E5F2C9;
+        """;
+    private static final String TABLE_HEADER_STYLE = """
+        -fx-background-color: #7F534B;
+        -fx-font-weight: bold;
+        -fx-font-size: 13px;
+        -fx-padding: 12px;
+        -fx-border-color: transparent transparent #8C705F transparent;
+        -fx-text-fill: #E5F2C9;
+        """;
+    private static final String TABLE_CELL_STYLE = """
+        -fx-padding: 12px;
+        -fx-alignment: center-left;
+        -fx-text-fill: #E5F2C9;
+        """;
+    private static final String RADIO_BUTTON_STYLE = "-fx-text-fill: #1E1A1D;";
+    private static final String TEXT_FIELD_STYLE = """
+        -fx-background-color: #F2F2F2;
+        -fx-text-fill: #1E1A1D;
+        -fx-prompt-text-fill: #8C705F;
+        -fx-border-color: #7F534B;
+        -fx-border-radius: 4;
+        -fx-background-radius: 4;
+        """;
+    private static final String COMBO_BOX_STYLE = """
+        -fx-background-color: #F2F2F2;
+        -fx-text-fill: #1E1A1D;
+        -fx-prompt-text-fill: #8C705F;
+        -fx-background-radius: 4;
+        -fx-border-color: #7F534B;
+        -fx-border-radius: 4;
+        """;
+    private static final String COMBO_BOX_STYLESHEET = """
+        .custom-combo-box .list-cell {
+            -fx-text-fill: #E5F2C9;
+            -fx-background-color: #F2F2F2;
+        }
+        .custom-combo-box .list-cell:hover {
+            -fx-background-color: #7F534B;
+        }
+        .custom-combo-box .list-view {
+            -fx-background-color: #F2F2F2;
+            -fx-border-color: #7F534B;
+        }
+        .custom-combo-box .arrow-button {
+            -fx-background-color: #7F534B;
+        }
+        .custom-combo-box .arrow {
+            -fx-background-color: #E5F2C9;
+        }
+        """;
 
+    /* =================== Métodos de Acesso =================== */
     public ObservableList<Aparelho> getMicrocontroladoresTable() {
-        return this.microcontroladoresData;
+        return microcontroladoresData;
     }
 
     public ObservableList<Conexao> getServidoresTable() {
-        return this.servidoresData;
+        return servidoresData;
     }
 
+    /* =================== Inicialização =================== */
     @FXML
     private void initialize() {
+        // Configuração das colunas da tabela de microcontroladores
         colMId.setCellValueFactory(cellData -> cellData.getValue().idProperty().asObject());
         colMEndereco.setCellValueFactory(cellData -> cellData.getValue().enderecoProperty());
         colAparelhosLigados.setCellValueFactory(cellData -> cellData.getValue().aparelhosLigadosProperty().asObject());
-        colAparelhosDesligados
-                .setCellValueFactory(cellData -> cellData.getValue().aparelhosDesligadosProperty().asObject());
+        colAparelhosDesligados.setCellValueFactory(cellData -> cellData.getValue().aparelhosDesligadosProperty().asObject());
+
+        // Configuração das colunas da tabela de servidores
         colSId.setCellValueFactory(cellData -> cellData.getValue().idProperty().asObject());
         colSEndereco.setCellValueFactory(cellData -> cellData.getValue().enderecoProperty());
         colPorta.setCellValueFactory(cellData -> cellData.getValue().portaProperty().asObject());
+
+        // Associação dos dados às tabelas
         servidores_tabela.setItems(servidoresData);
         microcontroladores_tabela.setItems(microcontroladoresData);
-        servidoresData.addListener((ListChangeListener<Conexao>) change -> {
-            idServidorList.setAll(servidoresData.stream().map(Conexao::getId).collect(Collectors.toList()));
-        });
+
+        // Atualiza a lista de IDs de servidor quando houver mudanças
+        servidoresData.addListener((ListChangeListener<Conexao>) change ->
+            idServidorList.setAll(servidoresData.stream().map(Conexao::getId).collect(Collectors.toList()))
+        );
         idServidorList.setAll(servidoresData.stream().map(Conexao::getId).collect(Collectors.toList()));
+
+        // Aplica estilos às tabelas e cabeçalhos
+        microcontroladores_tabela.setStyle(TABLE_STYLE);
+        servidores_tabela.setStyle(TABLE_STYLE);
+
+        colMId.setStyle(TABLE_HEADER_STYLE);
+        colMEndereco.setStyle(TABLE_HEADER_STYLE);
+        colAparelhosLigados.setStyle(TABLE_HEADER_STYLE);
+        colAparelhosDesligados.setStyle(TABLE_HEADER_STYLE);
+        colSId.setStyle(TABLE_HEADER_STYLE);
+        colSEndereco.setStyle(TABLE_HEADER_STYLE);
+        colPorta.setStyle(TABLE_HEADER_STYLE);
+
+        // Define células com estilo para cada coluna
+        colMId.setCellFactory(col -> createStyledTableCell());
+        colMEndereco.setCellFactory(col -> createStyledTableCell());
+        colAparelhosLigados.setCellFactory(col -> createStyledTableCell());
+        colAparelhosDesligados.setCellFactory(col -> createStyledTableCell());
+        colSId.setCellFactory(col -> createStyledTableCell());
+        colSEndereco.setCellFactory(col -> createStyledTableCell());
+        colPorta.setCellFactory(col -> createStyledTableCell());
+
+        // Configura linhas com efeito hover para ambas as tabelas
+        microcontroladores_tabela.setRowFactory(tv -> createHoverableTableRow());
+        servidores_tabela.setRowFactory(tv -> createHoverableTableRow());
     }
 
+    private <S, T> TableCell<S, T> createStyledTableCell() {
+        return new TableCell<>() {
+            @Override
+            protected void updateItem(T item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    setText(item.toString());
+                    setStyle(TABLE_CELL_STYLE);
+                }
+            }
+        };
+    }
+
+    private <T> TableRow<T> createHoverableTableRow() {
+        TableRow<T> row = new TableRow<>();
+        row.setStyle("-fx-background-color: white;");
+        row.hoverProperty().addListener((obs, wasHovered, isNowHovered) -> {
+            if (!row.isEmpty()) {
+                row.setStyle(isNowHovered ? "-fx-background-color: #f5f5f5;" : "-fx-background-color: white;");
+            }
+        });
+        return row;
+    }
+
+    /* =================== Handlers FXML =================== */
     @FXML
     void ligarServidor(ActionEvent event) {
-        ligarServidorDialog();
+        showLigarServidorDialog();
     }
 
     @FXML
     void microcontroladorDialog(ActionEvent event) {
-        microcontrolador();
+        showMicrocontroladorDialog();
     }
 
     @FXML
     void servidorDialog(ActionEvent event) {
-        servidor();
+        showServidorDialog();
     }
 
     @FXML
     void conexaoDialog(ActionEvent event) {
-        adicionarConexao();
+        showAdicionarConexaoDialog();
     }
 
     @FXML
     void sair(ActionEvent event) {
-        if (this.t_server != null)
-            this.t_server.interrupt();
-        if (this.t_queue != null)
-            this.t_queue.interrupt();
-        Platform.exit();
+        if (t_server != null) {
+            t_server.interrupt();
+        }
+        if (t_queue != null) {
+            t_queue.interrupt();
+        }
+        javafx.application.Platform.exit();
     }
 
-    private void adicionarConexao() {
-        Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.setTitle("Servidor");
+    /* =================== Diálogos =================== */
+    private void showAdicionarConexaoDialog() {
+        Stage dialog = createDialogStage("Adicionar Conexão");
 
-        Label instrucao = new Label(
-                "Aqui é possível adicionar conexões,\nconectando-se a outros servidores,\ncom isso sendo possível acessar\nmais salas.");
+        Label titleLabel = new Label("Adicionar Novas Conexões");
+        titleLabel.setStyle(TITLE_STYLE);
+
+        VBox form = new VBox(15);
+        form.setStyle(CARD_STYLE);
 
         Label addressLabel = new Label("Endereço:");
+        addressLabel.setStyle(LABEL_STYLE);
         TextField addressField = new TextField("127.0.0.1");
+        addressField.setStyle(TEXT_FIELD_STYLE);
 
         Label portLabel = new Label("Porta:");
+        portLabel.setStyle(LABEL_STYLE);
         TextField portField = new TextField("5001");
+        portField.setStyle(TEXT_FIELD_STYLE);
 
         Button conectar = new Button("Conectar");
+        conectar.setStyle(BUTTON_STYLE);
         Button cancelar = new Button("Cancelar");
+        cancelar.setStyle(CANCEL_BUTTON_STYLE);
 
         conectar.setOnAction(e -> {
-            String endereco_nc = addressField.getText();
+            String enderecoNc = addressField.getText();
             String portStr = portField.getText();
-
-            if (!endereco_nc.isEmpty() && !portStr.isEmpty()) {
+            if (!enderecoNc.isEmpty() && !portStr.isEmpty()) {
                 try {
-                    int porta_nc = Integer.parseInt(portStr);
-
-                    Comando comando = new Comando(3, endereco_nc, porta_nc);
-
-                    this.servidor.addComando(comando);
-
+                    int portaNc = Integer.parseInt(portStr);
+                    Comando comando = new Comando(3, enderecoNc, portaNc);
+                    servidor.addComando(comando);
                     dialog.close();
                 } catch (NumberFormatException ex) {
-                    Alert alert = new Alert(AlertType.ERROR);
-                    alert.setTitle("Erro");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Porta deve ser um número inteiro.");
-                    alert.showAndWait();
+                    showAlert("Erro", "Porta deve ser um número inteiro.");
                 }
             } else {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle("Erro");
-                alert.setHeaderText(null);
-                alert.setContentText("Por favor, preencha todos os campos.");
-                alert.showAndWait();
+                showAlert("Erro", "Por favor, preencha todos os campos.");
             }
         });
 
-        cancelar.setOnAction(e -> {
-            dialog.close();
-        });
+        cancelar.setOnAction(e -> dialog.close());
 
-        VBox vbox = new VBox(10, instrucao, addressLabel, addressField, portLabel, portField, conectar, cancelar);
-        vbox.setAlignment(Pos.CENTER);
-        vbox.setPadding(new Insets(20));
+        form.getChildren().addAll(addressLabel, addressField, portLabel, portField);
 
-        Scene scene = new Scene(vbox, 300, 300);
-        dialog.setScene(scene);
+        HBox buttons = new HBox(10, conectar, cancelar);
+        buttons.setAlignment(Pos.CENTER);
+
+        VBox container = new VBox(20, titleLabel, form, buttons);
+        container.setAlignment(Pos.TOP_CENTER);
+        container.setPadding(new Insets(20));
+
+        styleDialog(dialog, container);
+        dialog.setScene(new Scene(container));
         dialog.showAndWait();
     }
 
-    private void ligarServidorDialog() {
-        Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.setTitle("Ligar Servidor");
+    private void showLigarServidorDialog() {
+        Stage dialog = createDialogStage("Configuração do Servidor");
 
-        Label instrucao = new Label("Digite o endereço e porta do seu servidor e\na uri do seu broker de mensagens.");
+        Label titleLabel = new Label("Configurar Servidor");
+        titleLabel.setStyle(TITLE_STYLE);
+
+        VBox form = new VBox(15);
+        form.setStyle(CARD_STYLE);
 
         Label addressLabel = new Label("Endereço:");
-        TextField addressField = new TextField();
-        addressField.setText("127.0.0.1");
+        addressLabel.setStyle(LABEL_STYLE);
+        TextField addressField = new TextField("127.0.0.1");
+        addressField.setStyle(TEXT_FIELD_STYLE);
 
         Label portLabel = new Label("Porta:");
-        TextField portField = new TextField();
-        portField.setText("5000");
+        portLabel.setStyle(LABEL_STYLE);
+        TextField portField = new TextField("5000");
+        portField.setStyle(TEXT_FIELD_STYLE);
 
-        Label queueLabel = new Label("Nome da Fila:");
-        TextField queueField = new TextField();
-        queueField.setText("tcp://mqtt.eclipseprojects.io:1883");
+        Label queueLabel = new Label("URI do Broker:");
+        queueLabel.setStyle(LABEL_STYLE);
+        TextField queueField = new TextField("tcp://mqtt.eclipseprojects.io:1883");
+        queueField.setStyle(TEXT_FIELD_STYLE);
 
-        Button ligar = new Button("Ligar");
+        Button ligar = new Button("Iniciar Servidor");
+        ligar.setStyle(BUTTON_STYLE);
         Button cancelar = new Button("Cancelar");
+        cancelar.setStyle(CANCEL_BUTTON_STYLE);
 
         ligar.setOnAction(e -> {
             endereco = addressField.getText();
@@ -228,110 +379,89 @@ public class SimuladorController {
             if (!endereco.isEmpty() && !portStr.isEmpty() && !queueName.isEmpty()) {
                 try {
                     porta = Integer.parseInt(portStr);
-                    this.circle_toogle.setFill(Color.GREEN);
-                    this.servidor = new Servidor(endereco, porta, queueName, true, this);
-                    this.t_server = new Thread(() -> {
-                        this.servidor.startServer();
-                    });
+                    circle_toogle.setFill(Color.GREEN);
+                    servidor = new Servidor(endereco, porta, queueName, true, this);
+                    t_server = new Thread(servidor::startServer);
+                    t_queue = new Thread(servidor::startQueue);
+                    t_server.start();
+                    t_queue.start();
 
-                    this.t_queue = new Thread(() -> {
-                        this.servidor.startQueue();
-                    });
-
-                    this.t_server.start();
-                    this.t_queue.start();
-
-                    this.endereco_porta_lb.setText("Servidor ligado (" + endereco + ":" + portStr + ")");
-                    this.endereco_porta_lb.setVisible(true);
+                    endereco_porta_lb.setText("Servidor ligado (" + endereco + ":" + portStr + ")");
+                    endereco_porta_lb.setVisible(true);
                     dialog.close();
                 } catch (NumberFormatException ex) {
-                    Alert alert = new Alert(AlertType.ERROR);
-                    alert.setTitle("Erro");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Porta deve ser um número inteiro.");
-                    alert.showAndWait();
+                    showAlert("Erro", "Porta deve ser um número inteiro.");
                 }
             } else {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle("Erro");
-                alert.setHeaderText(null);
-                alert.setContentText("Por favor, preencha todos os campos.");
-                alert.showAndWait();
+                showAlert("Erro", "Por favor, preencha todos os campos.");
             }
         });
 
-        cancelar.setOnAction(e -> {
-            dialog.close();
-        });
+        cancelar.setOnAction(e -> dialog.close());
 
-        VBox vbox = new VBox(10, instrucao, addressLabel, addressField, portLabel, portField, queueLabel, queueField,
-                ligar,
-                cancelar);
-        vbox.setAlignment(Pos.CENTER);
-        vbox.setPadding(new Insets(20));
+        form.getChildren().addAll(addressLabel, addressField, portLabel, portField, queueLabel, queueField);
 
-        Scene scene = new Scene(vbox, 400, 400);
+        HBox buttons = new HBox(10, ligar, cancelar);
+        buttons.setAlignment(Pos.CENTER);
+
+        VBox container = new VBox(20, titleLabel, form, buttons);
+        container.setAlignment(Pos.TOP_CENTER);
+        container.setPadding(new Insets(20));
+
+        styleDialog(dialog, container);
+        Scene scene = new Scene(container);
+        // Adiciona stylesheet customizado para ComboBox
+        scene.getStylesheets().add("data:text/css," + COMBO_BOX_STYLESHEET.replaceAll("\n", ""));
         dialog.setScene(scene);
         dialog.showAndWait();
     }
 
-    private void servidor() {
-        Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.setTitle("Servidor");
+    private void showServidorDialog() {
+        Stage dialog = createDialogStage("Servidor");
 
-        Label instrucao = new Label(
-                "Aqui é possível acessar e controlar remotamente\nos servidores conectados a esse servidor,\n digite a opção que deseja e o destino da mensagem.");
+        Label titleLabel = new Label("Controle de Servidores");
+        titleLabel.setStyle(TITLE_STYLE);
 
-        // 1. Campo para selecionar o ID do servidor
+        VBox form = new VBox(10);
+        form.setStyle(CARD_STYLE);
+
         Label idServidorLabel = new Label("ID do Servidor:");
-        ComboBox<Integer> idServidorComboBox = new ComboBox<>();
-        idServidorComboBox.setItems(idServidorList);
+        idServidorLabel.setStyle(LABEL_STYLE);
+        ComboBox<Integer> idServidorComboBox = new ComboBox<>(idServidorList);
+        idServidorComboBox.setMaxWidth(Double.MAX_VALUE);
+        idServidorComboBox.setStyle(COMBO_BOX_STYLE);
 
-        // 2. ToggleGroup com as opções: desligar, ligar e descrever
         Label opcoesLabel = new Label("Opções:");
+        opcoesLabel.setStyle(LABEL_STYLE);
         ToggleGroup opcaoServidorGroup = new ToggleGroup();
-        RadioButton desligar = new RadioButton("Desligar");
-        RadioButton ligar = new RadioButton("Ligar");
-        RadioButton descrever = new RadioButton("Descrever");
-        desligar.setToggleGroup(opcaoServidorGroup);
-        ligar.setToggleGroup(opcaoServidorGroup);
-        descrever.setToggleGroup(opcaoServidorGroup);
-
+        RadioButton desligar = createRadioButton("Desligar", opcaoServidorGroup);
+        RadioButton ligar = createRadioButton("Ligar", opcaoServidorGroup);
+        RadioButton descrever = createRadioButton("Descrever", opcaoServidorGroup);
         VBox opcoesBox = new VBox(5, desligar, ligar, descrever);
-        opcoesBox.setAlignment(Pos.CENTER);
 
-        // 3. Outro ToggleGroup com as opções: uma sala e todas as salas
         Label destinoLabel = new Label("Destino:");
+        destinoLabel.setStyle(LABEL_STYLE);
         ToggleGroup destinoGroup = new ToggleGroup();
-        RadioButton umaSala = new RadioButton("Uma Sala");
-        RadioButton todasSalas = new RadioButton("Todas as Salas");
-        umaSala.setToggleGroup(destinoGroup);
-        todasSalas.setToggleGroup(destinoGroup);
-
+        RadioButton umaSala = createRadioButton("Uma Sala", destinoGroup);
+        RadioButton todasSalas = createRadioButton("Todas as Salas", destinoGroup);
         VBox destinoBox = new VBox(5, umaSala, todasSalas);
-        destinoBox.setAlignment(Pos.CENTER);
 
-        // Campo para digitar o ID do microcontrolador (aparece se 'uma sala' for
-        // selecionado)
         Label idMicroLabel = new Label("ID do Microcontrolador:");
+        idMicroLabel.setStyle(LABEL_STYLE);
         TextField idMicroField = new TextField();
+        idMicroField.setStyle(TEXT_FIELD_STYLE);
         idMicroLabel.setVisible(false);
         idMicroField.setVisible(false);
-
         destinoGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
-            if (newToggle == umaSala) {
-                idMicroLabel.setVisible(true);
-                idMicroField.setVisible(true);
-            } else {
-                idMicroLabel.setVisible(false);
-                idMicroField.setVisible(false);
-            }
+            boolean isUmaSala = newToggle == umaSala;
+            idMicroLabel.setVisible(isUmaSala);
+            idMicroField.setVisible(isUmaSala);
         });
 
-        // 4. Botões enviar e cancelar
         Button enviar = new Button("Enviar");
+        enviar.setStyle(BUTTON_STYLE);
         Button cancelar = new Button("Cancelar");
+        cancelar.setStyle(CANCEL_BUTTON_STYLE);
 
         enviar.setOnAction(e -> {
             Integer idServidor = idServidorComboBox.getValue();
@@ -339,204 +469,202 @@ public class SimuladorController {
             RadioButton destinoSelecionado = (RadioButton) destinoGroup.getSelectedToggle();
 
             if (idServidor == null || opcaoSelecionada == null || destinoSelecionado == null) {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle("Erro");
-                alert.setHeaderText(null);
-                alert.setContentText("Por favor, preencha todos os campos e selecione as opções.");
-                alert.showAndWait();
+                showAlert("Erro", "Por favor, preencha todos os campos e selecione as opções.");
                 return;
             }
 
-            int op;
-            switch (opcaoSelecionada.getText()) {
-                case "Desligar":
-                    op = 0;
-                    break;
-                case "Ligar":
-                    op = 1;
-                    break;
-                case "Descrever":
-                    op = 2;
-                    break;
-                default:
-                    op = 2;
-                    break;
-            }
+            int op = switch (opcaoSelecionada.getText()) {
+                case "Desligar" -> 0;
+                case "Ligar" -> 1;
+                case "Descrever" -> 2;
+                default -> 2;
+            };
 
             if (destinoSelecionado == umaSala) {
                 String idMicroStr = idMicroField.getText();
                 if (idMicroStr.isEmpty()) {
-                    Alert alert = new Alert(AlertType.ERROR);
-                    alert.setTitle("Erro");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Por favor, digite o ID do microcontrolador.");
-                    alert.showAndWait();
+                    showAlert("Erro", "Por favor, digite o ID do microcontrolador.");
                     return;
                 }
-
-                int idMicro;
                 try {
-                    idMicro = Integer.parseInt(idMicroStr);
+                    int idMicro = Integer.parseInt(idMicroStr);
+                    Comando comando = new Comando(1, idMicro, idServidor, op, op);
+                    servidor.addComando(comando);
                 } catch (NumberFormatException ex) {
-                    Alert alert = new Alert(AlertType.ERROR);
-                    alert.setTitle("Erro");
-                    alert.setHeaderText(null);
-                    alert.setContentText("ID do microcontrolador deve ser um número inteiro.");
-                    alert.showAndWait();
+                    showAlert("Erro", "ID do microcontrolador deve ser um número inteiro.");
                     return;
                 }
-
-                // Envia comando para um microcontrolador específico
-                Comando comando = new Comando(1, idMicro, idServidor, op, op);
-                servidor.addComando(comando);
             } else {
-                // Envia comando para todos os microcontroladores
                 Comando comando = new Comando(1, -1, idServidor, op, op);
                 servidor.addComando(comando);
             }
-
             dialog.close();
         });
 
-        cancelar.setOnAction(e -> {
-            dialog.close();
-        });
+        cancelar.setOnAction(e -> dialog.close());
 
-        VBox vbox = new VBox(10, instrucao, idServidorLabel, idServidorComboBox, opcoesLabel, opcoesBox,
-                destinoLabel, destinoBox, idMicroLabel, idMicroField, enviar, cancelar);
-        vbox.setAlignment(Pos.CENTER);
-        vbox.setPadding(new Insets(20));
+        form.getChildren().addAll(
+            idServidorLabel, idServidorComboBox,
+            opcoesLabel, opcoesBox,
+            destinoLabel, destinoBox,
+            idMicroLabel, idMicroField
+        );
 
-        Scene scene = new Scene(vbox, 400, 500);
+        ScrollPane scrollPane = new ScrollPane(form);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+        scrollPane.setPrefViewportHeight(350);
+
+        HBox buttons = new HBox(10, enviar, cancelar);
+        buttons.setAlignment(Pos.CENTER);
+        buttons.setPadding(new Insets(10));
+
+        VBox container = new VBox(10, titleLabel, scrollPane, buttons);
+        container.setAlignment(Pos.TOP_CENTER);
+        container.setPadding(new Insets(15));
+
+        styleDialog(dialog, container);
+        Scene scene = new Scene(container);
+        idServidorComboBox.getStyleClass().add("custom-combo-box");
+        scene.getStylesheets().add("data:text/css," + COMBO_BOX_STYLESHEET.replaceAll("\n", ""));
         dialog.setScene(scene);
         dialog.showAndWait();
     }
 
-    private void microcontrolador() {
-        Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.setTitle("Microcontrolador");
+    private void showMicrocontroladorDialog() {
+        Stage dialog = createDialogStage("Microcontrolador");
 
-        Label instrucao = new Label(
-                "Aqui é possível acessar e controlar remotamente\nos microcontroladores conectados a esse servidor,\n digite a opção que deseja e o destino da mensagem.");
+        Label titleLabel = new Label("Controle de Microcontroladores");
+        titleLabel.setStyle(TITLE_STYLE);
 
-        Label group1Label = new Label("Opções:");
-        ToggleGroup opcao_microcontrolador = new ToggleGroup();
-        RadioButton ligar = new RadioButton("Ligar");
-        RadioButton desligar = new RadioButton("Desligar");
-        RadioButton descrever = new RadioButton("Descrever");
-        ligar.setToggleGroup(opcao_microcontrolador);
-        desligar.setToggleGroup(opcao_microcontrolador);
-        descrever.setToggleGroup(opcao_microcontrolador);
+        VBox form = new VBox(10);
+        form.setStyle(CARD_STYLE);
 
-        VBox group1Box = new VBox(5, ligar, desligar, descrever);
-        group1Box.setAlignment(Pos.CENTER);
+        // Card para Ações
+        VBox card1 = new VBox(10);
+        card1.setStyle(CARD_STYLE);
+        Label group1Label = new Label("Ações:");
+        group1Label.setStyle(LABEL_STYLE);
+        ToggleGroup opcaoMicrocontrolador = new ToggleGroup();
+        RadioButton ligar = createRadioButton("Ligar", opcaoMicrocontrolador);
+        RadioButton desligar = createRadioButton("Desligar", opcaoMicrocontrolador);
+        RadioButton descrever = createRadioButton("Descrever", opcaoMicrocontrolador);
+        VBox group1Box = new VBox(10, ligar, desligar, descrever);
+        group1Box.setStyle("-fx-padding: 10;");
+        card1.getChildren().addAll(group1Label, group1Box);
 
-        VBox card1 = new VBox(10, group1Label, group1Box);
-        card1.setAlignment(Pos.CENTER);
-        card1.setPadding(new Insets(10));
-        card1.setStyle(
-                "-fx-border-color: #ccc; -fx-border-radius: 5; -fx-background-color: #f9f9f9; -fx-background-radius: 5;");
+        // Card para Destino
+        VBox card2 = new VBox(10);
+        card2.setStyle(CARD_STYLE);
+        Label group2Label = new Label("Destino:");
+        group2Label.setStyle(LABEL_STYLE);
+        ToggleGroup destinoGroup = new ToggleGroup();
+        RadioButton enviarParaUm = createRadioButton("Uma Sala", destinoGroup);
+        RadioButton enviarParaTodos = createRadioButton("Todas as salas", destinoGroup);
+        VBox group2Box = new VBox(10, enviarParaUm, enviarParaTodos);
+        group2Box.setStyle("-fx-padding: 10;");
 
-        Label group2Label = new Label("Opções:");
-        ToggleGroup id_microcontrolador = new ToggleGroup();
-        RadioButton enviar_para_um = new RadioButton("Uma Sala");
-        RadioButton enviar_para_todos = new RadioButton("Todas as salas");
-        enviar_para_um.setToggleGroup(id_microcontrolador);
-        enviar_para_todos.setToggleGroup(id_microcontrolador);
-
-        VBox group2Box = new VBox(5, enviar_para_um, enviar_para_todos);
-        group2Box.setAlignment(Pos.CENTER);
-
-        Label inputLabel = new Label("Digite o ID da sala:");
+        Label inputLabel = new Label("ID da sala:");
+        inputLabel.setStyle(LABEL_STYLE);
         TextField inputField = new TextField();
+        inputField.setStyle(TEXT_FIELD_STYLE);
         inputLabel.setVisible(false);
         inputField.setVisible(false);
-
-        id_microcontrolador.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
-            if (newToggle == enviar_para_um) {
-                inputLabel.setVisible(true);
-                inputField.setVisible(true);
-            } else {
-                inputLabel.setVisible(false);
-                inputField.setVisible(false);
-            }
+        destinoGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            boolean showInput = newToggle == enviarParaUm;
+            inputLabel.setVisible(showInput);
+            inputField.setVisible(showInput);
         });
-
-        VBox card2 = new VBox(10, group2Label, group2Box, inputLabel, inputField);
-        card2.setAlignment(Pos.CENTER);
-        card2.setPadding(new Insets(10));
-        card2.setStyle(
-                "-fx-border-color: #ccc; -fx-border-radius: 5; -fx-background-color: #f9f9f9; -fx-background-radius: 5;");
+        card2.getChildren().addAll(group2Label, group2Box, inputLabel, inputField);
 
         Button submit = new Button("Enviar");
+        submit.setStyle(BUTTON_STYLE);
         Button cancelar = new Button("Cancelar");
+        cancelar.setStyle(CANCEL_BUTTON_STYLE);
 
         submit.setOnAction(e -> {
-            RadioButton opcaoSelecionada = (RadioButton) opcao_microcontrolador.getSelectedToggle();
-            RadioButton destinatarioSelecionado = (RadioButton) id_microcontrolador.getSelectedToggle();
-
+            RadioButton opcaoSelecionada = (RadioButton) opcaoMicrocontrolador.getSelectedToggle();
+            RadioButton destinatarioSelecionado = (RadioButton) destinoGroup.getSelectedToggle();
             if (opcaoSelecionada != null && destinatarioSelecionado != null) {
-                int op;
-                switch (opcaoSelecionada.getText()) {
-                    case "Desligar":
-                        op = 0;
-                        break;
-                    case "Ligar":
-                        op = 1;
-                        break;
-                    case "Descrever":
-                        op = 2;
-                        break;
-                    default:
-                        op = 2;
-                        break;
-                }
-
-                if (destinatarioSelecionado == enviar_para_um) {
+                int op = switch (opcaoSelecionada.getText()) {
+                    case "Desligar" -> 0;
+                    case "Ligar" -> 1;
+                    case "Descrever" -> 2;
+                    default -> 2;
+                };
+                if (destinatarioSelecionado == enviarParaUm) {
                     String idSalaStr = inputField.getText();
                     if (!idSalaStr.isEmpty()) {
-                        int idSala = Integer.parseInt(idSalaStr);
-                        // Send command to specific room
-                        Comando comando = new Comando(0, op, idSala, -1, "", -1);
-                        servidor.addComando(comando);
-                        dialog.close();
+                        try {
+                            int idSala = Integer.parseInt(idSalaStr);
+                            Comando comando = new Comando(0, op, idSala, -1, "", -1);
+                            servidor.addComando(comando);
+                            dialog.close();
+                        } catch (NumberFormatException ex) {
+                            showAlert("Erro", "ID da sala deve ser um número inteiro.");
+                        }
                     } else {
-                        Alert alert = new Alert(AlertType.ERROR);
-                        alert.setTitle("Erro");
-                        alert.setHeaderText(null);
-                        alert.setContentText("Por favor, digite o ID da sala.");
-                        alert.showAndWait();
-                        return;
+                        showAlert("Erro", "Por favor, digite o ID da sala.");
                     }
                 } else {
-                    // Send command to all rooms
                     Comando comando = new Comando(0, op, -1, -1, "", -1);
                     servidor.addComando(comando);
                     dialog.close();
                 }
             } else {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle("Erro");
-                alert.setHeaderText(null);
-                alert.setContentText("Por favor, selecione todas as opções.");
-                alert.showAndWait();
+                showAlert("Erro", "Por favor, selecione todas as opções.");
             }
         });
 
-        cancelar.setOnAction(e -> {
-            dialog.close();
-        });
+        cancelar.setOnAction(e -> dialog.close());
 
-        HBox buttonBox = new HBox(10, submit, cancelar);
-        buttonBox.setAlignment(Pos.CENTER);
+        form.getChildren().addAll(card1, card2);
 
-        VBox vbox = new VBox(20, instrucao, card1, card2, buttonBox);
-        vbox.setAlignment(Pos.CENTER);
-        vbox.setPadding(new Insets(20));
+        ScrollPane scrollPane = new ScrollPane(form);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+        scrollPane.setPrefViewportHeight(350);
 
-        Scene scene = new Scene(vbox, 400, 500);
-        dialog.setScene(scene);
+        HBox buttons = new HBox(10, submit, cancelar);
+        buttons.setAlignment(Pos.CENTER);
+        buttons.setPadding(new Insets(10));
+
+        VBox container = new VBox(10, titleLabel, scrollPane, buttons);
+        container.setAlignment(Pos.TOP_CENTER);
+        container.setPadding(new Insets(15));
+
+        styleDialog(dialog, container);
+        dialog.setScene(new Scene(container));
         dialog.showAndWait();
+    }
+
+    /* =================== Métodos Auxiliares =================== */
+    private RadioButton createRadioButton(String text, ToggleGroup group) {
+        RadioButton rb = new RadioButton(text);
+        rb.setToggleGroup(group);
+        rb.setStyle(RADIO_BUTTON_STYLE);
+        return rb;
+    }
+
+    private Stage createDialogStage(String title) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle(title);
+        return stage;
+    }
+
+    private void styleDialog(Stage dialog, VBox container) {
+        container.setStyle(DIALOG_STYLE);
+        dialog.setMinWidth(450);
+        dialog.setMinHeight(500);
+        dialog.setResizable(true);
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

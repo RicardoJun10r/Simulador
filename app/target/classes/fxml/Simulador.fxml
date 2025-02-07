@@ -15,68 +15,86 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ComboBox?>
 
 <AnchorPane
    maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
-   prefHeight="401.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/22"
-   xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.trabalho.controller.SimuladorController">
+   prefHeight="600.0" prefWidth="1000.0" style="-fx-background-color: #F2F2F2;"
+   xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1"
+   fx:controller="com.trabalho.controller.SimuladorController">
    <children>
-      <Pane
-         prefHeight="54.0" style="-fx-background-color: #87CEEB;" AnchorPane.topAnchor="0.0"
+      <Pane prefHeight="60.0" style="-fx-background-color: #1E1A1D;" AnchorPane.topAnchor="0.0"
          AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
          <children>
-            <Label layoutX="14.0" layoutY="12.0" text="SmartEnvControl">
+            <Label layoutX="20.0" layoutY="12.0" text="SmartEnvControl" textFill="#E5F2C9">
                <font>
-                  <Font size="26.0" />
+                  <Font name="Roboto Bold" size="28.0" />
                </font>
             </Label>
+            <Button layoutX="800.0" layoutY="15.0" text="Ligar Servidor" 
+               onAction="#ligarServidor"
+               style="-fx-background-color: #7F534B; -fx-text-fill: #E5F2C9; -fx-background-radius: 6;">
+               <font>
+                  <Font name="Roboto" size="14.0" />
+               </font>
+            </Button>
+            <Circle fx:id="circle_toogle" layoutX="950.0" layoutY="30.0" 
+               fill="#ff1f1f" radius="8.0" stroke="WHITE" strokeWidth="2.0"/>
          </children>
       </Pane>
-      <VBox
-         style="-fx-background-color: #87CEEB;" AnchorPane.topAnchor="54.0"
-         AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0">
+      
+      <VBox spacing="5.0" style="-fx-background-color: #1E1A1D; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 0);"
+         AnchorPane.topAnchor="60.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" prefWidth="200.0">
          <children>
-            <Button mnemonicParsing="false" mouseTransparent="false"
-               onAction="#microcontroladorDialog" prefHeight="30.0" prefWidth="157.0"
-               style="-fx-background-color: #87CEEB;" text="Microcontroladores">
-               <VBox.margin>
-                  <Insets top="10.0" />
-               </VBox.margin>
+            <Button mnemonicParsing="false" onAction="#microcontroladorDialog"
+               style="-fx-background-color: #7F534B; -fx-text-fill: #E5F2C9; -fx-background-radius: 6;"
+               text="Microcontroladores" prefHeight="35.0" prefWidth="160.0">
                <font>
                   <Font name="Roboto" size="13.0" />
                </font>
-            </Button>
-            <Button mnemonicParsing="false" onAction="#servidorDialog" prefHeight="30.0"
-               prefWidth="158.0" style="-fx-background-color: #87CEEB;" styleClass="buttons"
-               text="Servidores">
                <VBox.margin>
                   <Insets top="10.0" />
                </VBox.margin>
+            </Button>
+            <Button mnemonicParsing="false" onAction="#servidorDialog" 
+               style="-fx-background-color: #7F534B; -fx-text-fill: #E5F2C9; -fx-background-radius: 6;"
+               text="Servidores" prefHeight="35.0" prefWidth="160.0">
                <font>
                   <Font name="Roboto" size="13.0" />
                </font>
-            </Button>
-            <Button mnemonicParsing="false" onAction="#conexaoDialog" prefHeight="30.0"
-               prefWidth="158.0" style="-fx-background-color: #87CEEB;" styleClass="buttons"
-               text="Adicionar Conexão">
                <VBox.margin>
                   <Insets top="10.0" />
                </VBox.margin>
+            </Button>
+            <Button mnemonicParsing="false" onAction="#conexaoDialog" 
+               style="-fx-background-color: #7F534B; -fx-text-fill: #E5F2C9; -fx-background-radius: 6;"
+               text="Adicionar Conexão" prefHeight="35.0" prefWidth="160.0">
                <font>
                   <Font name="Roboto" size="13.0" />
                </font>
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
             </Button>
-            <Button mnemonicParsing="false" onAction="#sair" prefHeight="30.0" prefWidth="184.0"
-               style="-fx-background-color: #87CEEB;" styleClass="buttons" text="Sair">
+            <Button mnemonicParsing="false" onAction="#sair" 
+               style="-fx-background-color: #7F534B; -fx-text-fill: #E5F2C9; -fx-background-radius: 6;"
+               text="Sair" prefHeight="35.0" prefWidth="160.0">
+               <font>
+                  <Font name="Roboto" size="13.0" />
+               </font>
                <VBox.margin>
                   <Insets top="10.0" />
                </VBox.margin>
             </Button>
          </children>
+         <padding>
+            <Insets top="10.0" />
+         </padding>
       </VBox>
-      <GridPane
-         AnchorPane.topAnchor="54.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="200.0"
-         AnchorPane.rightAnchor="0.0">
+
+      <GridPane hgap="20.0" AnchorPane.topAnchor="80.0" AnchorPane.bottomAnchor="20.0" 
+         AnchorPane.leftAnchor="220.0" AnchorPane.rightAnchor="20.0">
          <columnConstraints>
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -85,57 +103,60 @@
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
          </rowConstraints>
          <children>
-            <VBox prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="1">
+            <VBox spacing="10.0" style="-fx-background-color: #4D4D4D; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 0); -fx-background-radius: 5;" VBox.vgrow="ALWAYS">
                <children>
-                  <Label prefHeight="18.0" prefWidth="243.0" text="Meus Microcontroladores" />
-                  <Separator prefWidth="200.0" />
-                  <TableView fx:id="microcontroladores_tabela" prefHeight="307.0" prefWidth="214.0">
+                  <Label text="Servidores conectados" style="-fx-font-weight: bold; -fx-text-fill: #F2F2F2;">
+                     <font>
+                        <Font name="Roboto Bold" size="16.0" />
+                     </font>
+                  </Label>
+                  <Separator style="-fx-background-color: #666666;"/>
+                  <TableView fx:id="servidores_tabela" VBox.vgrow="ALWAYS">
                      <columns>
-                         <TableColumn fx:id="colMId" prefWidth="69.0" text="ID" />
-                         <TableColumn fx:id="colMEndereco" prefWidth="94.0" text="Endereço" />
-                         <TableColumn text="Aparelhos" prefWidth="105.0">
-                             <columns>
-                                 <TableColumn fx:id="colAparelhosLigados" prefWidth="56.0" text="Ligados" />
-                                 <TableColumn fx:id="colAparelhosDesligados" prefWidth="69.0" text="Desligados" />
-                             </columns>
-                         </TableColumn>
+                        <TableColumn fx:id="colSId" prefWidth="100.0" text="ID" />
+                        <TableColumn fx:id="colSEndereco" prefWidth="150.0" text="Endereço" />
+                        <TableColumn fx:id="colPorta" prefWidth="100.0" text="Porta" />
                      </columns>
-                 </TableView>
-               </children>
-               <padding>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </padding>
-            </VBox>
-            <VBox prefHeight="348.0" prefWidth="244.0">
-               <children>
-                  <Label prefHeight="18.0" prefWidth="244.0" text="Servidores conectados" />
-                  <Separator prefWidth="200.0" />
-                  <TableView fx:id="servidores_tabela" prefHeight="335.0" prefWidth="215.0">
-                     <columns>
-                        <TableColumn fx:id="colSId" prefWidth="75.0" text="ID" />
-                        <TableColumn fx:id="colSEndereco" prefWidth="75.0" text="Endereço" />
-                        <TableColumn fx:id="colPorta" prefWidth="75.0" text="Porta" />
-                     </columns>
+                     <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                     </columnResizePolicy>
                   </TableView>
                </children>
                <padding>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+               </padding>
+            </VBox>
+
+            <VBox spacing="10.0" GridPane.columnIndex="1" 
+               style="-fx-background-color: #4D4D4D; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 0); -fx-background-radius: 5;" VBox.vgrow="ALWAYS">
+               <children>
+                  <Label text="Meus Microcontroladores" style="-fx-font-weight: bold; -fx-text-fill: #F2F2F2;">
+                     <font>
+                        <Font name="Roboto Bold" size="16.0" />
+                     </font>
+                  </Label>
+                  <Separator style="-fx-background-color: #666666;"/>
+                  <TableView fx:id="microcontroladores_tabela" VBox.vgrow="ALWAYS">
+                     <columns>
+                        <TableColumn fx:id="colMId" prefWidth="80.0" text="ID" />
+                        <TableColumn fx:id="colMEndereco" prefWidth="120.0" text="Endereço" />
+                        <TableColumn text="Aparelhos" prefWidth="150.0">
+                           <columns>
+                              <TableColumn fx:id="colAparelhosLigados" prefWidth="75.0" text="Ligados" />
+                              <TableColumn fx:id="colAparelhosDesligados" prefWidth="75.0" text="Desligados" />
+                           </columns>
+                        </TableColumn>
+                     </columns>
+                     <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                     </columnResizePolicy>
+                  </TableView>
+               </children>
+               <padding>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </padding>
             </VBox>
          </children>
       </GridPane>
-      <Button
-         text="Ligar Servidor" onAction="#ligarServidor" style="-fx-background-color: #00BFFF;"
-         AnchorPane.topAnchor="12.0" AnchorPane.rightAnchor="40.0">
-         <font>
-            <Font name="Roboto" size="13.0" />
-         </font>
-      </Button>
-      <Circle
-         fx:id="circle_toogle" fill="#ff1f1f" radius="12.0" stroke="BLACK"
-         AnchorPane.topAnchor="15.0" AnchorPane.rightAnchor="10.0" />
-      <Label
-         fx:id="endereco_porta_lb" visible="false" AnchorPane.topAnchor="20.0"
-         AnchorPane.leftAnchor="250.0" />
    </children>
 </AnchorPane>
