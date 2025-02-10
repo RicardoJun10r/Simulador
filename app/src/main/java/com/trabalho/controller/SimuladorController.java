@@ -361,10 +361,15 @@ public class SimuladorController {
         TextField portField = new TextField("5000");
         portField.setStyle(TEXT_FIELD_STYLE);
 
-        Label queueLabel = new Label("URI do Broker:");
-        queueLabel.setStyle(LABEL_STYLE);
-        TextField queueField = new TextField("tcp://mqtt.eclipseprojects.io:1883");
-        queueField.setStyle(TEXT_FIELD_STYLE);
+        Label servidorLabel = new Label("login");
+        servidorLabel.setStyle(LABEL_STYLE);
+        TextField servidorField = new TextField();
+        servidorField.setStyle(TEXT_FIELD_STYLE);
+
+        Label topicoLabel = new Label("Conectar a qual sala ?");
+        topicoLabel.setStyle(LABEL_STYLE);
+        TextField topicoField = new TextField("sala1");
+        topicoField.setStyle(TEXT_FIELD_STYLE);
 
         Button ligar = new Button("Iniciar Servidor");
         ligar.setStyle(BUTTON_STYLE);
@@ -374,13 +379,15 @@ public class SimuladorController {
         ligar.setOnAction(e -> {
             endereco = addressField.getText();
             String portStr = portField.getText();
-            String queueName = queueField.getText();
+            String queueName = topicoField.getText();
+            String loginName = servidorField.getText();
+            String [] topicos = {loginName, queueName};
 
             if (!endereco.isEmpty() && !portStr.isEmpty() && !queueName.isEmpty()) {
                 try {
                     porta = Integer.parseInt(portStr);
                     circle_toogle.setFill(Color.GREEN);
-                    servidor = new Servidor(endereco, porta, queueName, true, this);
+                    servidor = new Servidor(endereco, porta, "tcp://mqtt.eclipseprojects.io:1883", topicos, true, this);
                     t_server = new Thread(servidor::startServer);
                     t_queue = new Thread(servidor::startQueue);
                     t_server.start();
@@ -399,7 +406,7 @@ public class SimuladorController {
 
         cancelar.setOnAction(e -> dialog.close());
 
-        form.getChildren().addAll(addressLabel, addressField, portLabel, portField, queueLabel, queueField);
+        form.getChildren().addAll(addressLabel, addressField, portLabel, portField, servidorLabel, servidorField, topicoLabel, topicoField);
 
         HBox buttons = new HBox(10, ligar, cancelar);
         buttons.setAlignment(Pos.CENTER);

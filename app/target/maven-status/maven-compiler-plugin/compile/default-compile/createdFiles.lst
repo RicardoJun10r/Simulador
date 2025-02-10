@@ -1,11 +1,12 @@
 com/trabalho/salaAula/Aparelhos/ArCondicionado.class
 com/trabalho/shared/Mensagem.class
+com/trabalho/controller/SimuladorController$1.class
 com/trabalho/salaAula/Aparelhos/Computador.class
 com/trabalho/broker/IBrokerQueue.class
 com/trabalho/util/ClientSocket.class
 com/trabalho/shared/ServerRes.class
-com/trabalho/util/Aparelho.class
 com/trabalho/client/MainClient.class
+com/trabalho/util/Aparelho.class
 com/trabalho/server/Servidor.class
 com/trabalho/salaAula/Sala.class
 com/trabalho/controller/SimuladorController.class
@@ -15,6 +16,6 @@ com/trabalho/util/MenuInterface.class
 com/trabalho/salaAula/Aparelhos/Interface/InterAparelho.class
 com/trabalho/broker/BrokerQueue$1.class
 com/trabalho/shared/Comando.class
-com/trabalho/util/Conexao.class
 com/trabalho/client/Microcontrolador.class
+com/trabalho/util/Conexao.class
 com/trabalho/shared/ServerReq.class

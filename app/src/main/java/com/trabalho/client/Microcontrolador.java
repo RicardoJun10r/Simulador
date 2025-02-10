@@ -23,13 +23,12 @@ public class Microcontrolador {
      * @param sala          Instância da sala para controle dos aparelhos.
      * @param debug         Se true, ativa mensagens de depuração.
      */
-    public Microcontrolador(String id, String brokerAddress, Sala sala, boolean debug) {
+    public Microcontrolador(String id, String brokerAddress, Sala sala, String[] topicos, boolean debug) {
         this.id = id;
         this.debug = debug;
         this.sala = sala;
         this.executor = Executors.newSingleThreadExecutor();
 
-        String[] topicos = { "microcontrolador", "servidor" };
         this.broker = new BrokerQueue(brokerAddress, topicos, 0);
 
         // Configura o método de escuta para mensagens do broker.
@@ -37,7 +36,7 @@ public class Microcontrolador {
             String time = new Timestamp(System.currentTimeMillis()).toString();
             String content = new String(message.getPayload());
 
-            if (debug) {
+            if (this.debug) {
                 System.out.println("\nMensagem recebida!" +
                         "\n\tData/Hora: " + time +
                         "\n\tTópico: " + topic +

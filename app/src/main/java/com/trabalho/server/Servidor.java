@@ -47,7 +47,7 @@ public class Servidor {
     private ObservableList<Conexao> observableServidores;
     private final List<Integer> microcontroladoresIds = Collections.synchronizedList(new ArrayList<>());
 
-    public Servidor(String host, int port, String brokerAddress, boolean debug, SimuladorController app) {
+    public Servidor(String host, int port, String brokerAddress, String[] topicos, boolean debug, SimuladorController app) {
         this.host = host;
         this.port = port;
         this.debug = debug;
@@ -55,19 +55,18 @@ public class Servidor {
         this.observableAparelhos = (app != null) ? app.getMicrocontroladoresTable() : null;
         this.observableServidores = (app != null) ? app.getServidoresTable() : null;
 
-        String[] topicos = { "servidor", "microcontrolador" };
         this.broker = new BrokerQueue(brokerAddress, topicos, 0);
         listenMicrocontrolador();
         this.executor = Executors.newFixedThreadPool(NUM_THREADS);
     }
 
-    public Servidor(String host, int port, String brokerAddress, boolean debug) {
-        this(host, port, brokerAddress, debug, null);
-    }
+    // public Servidor(String host, int port, String brokerAddress, boolean debug) {
+    //     this(host, port, brokerAddress, debug, null);
+    // }
 
-    public Servidor(String host, int port, boolean debug) {
-        this(host, port, null, debug, null);
-    }
+    // public Servidor(String host, int port, boolean debug) {
+    //     this(host, port, null, debug, null);
+    // }
 
     /**
      * Inicializa a fila de mensagens (broker) caso não tenha sido configurado.
