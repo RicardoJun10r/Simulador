@@ -6,13 +6,9 @@ import java.time.LocalDateTime;
 public class Mensagem implements Serializable {
 
     private String endereco;
-
     private int porta;
-
     private LocalDateTime horario;
-    
     private String headers;
-    
     private String mensagem;
 
     public Mensagem(String endereco, int porta, String headers, String mensagem) {
@@ -23,11 +19,12 @@ public class Mensagem implements Serializable {
         this.mensagem = mensagem;
     }
 
-    public Mensagem(String mensagem){
+    public Mensagem(String mensagem) {
         this.horario = LocalDateTime.now();
         this.mensagem = mensagem;
     }
 
+    // Getters e setters
     public String getEndereco() {
         return endereco;
     }
@@ -70,8 +67,7 @@ public class Mensagem implements Serializable {
 
     @Override
     public String toString() {
-        return "[ endereco = " + endereco + ", porta = " + porta + ", horario = " + horario + ", headers = " + headers
-                + ", mensagem = " + mensagem + " ]";
+        return "[ endereco = " + endereco + ", porta = " + porta + ", horario = " + horario +
+                ", headers = " + headers + ", mensagem = " + mensagem + " ]";
     }
-
 }

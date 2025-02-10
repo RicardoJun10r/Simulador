@@ -6,25 +6,15 @@ import javafx.beans.property.SimpleStringProperty;
 public class Conexao {
 
     private SimpleIntegerProperty id;
-
     private SimpleStringProperty endereco;
-
     private SimpleIntegerProperty porta;
 
-    public Conexao(SimpleIntegerProperty id, SimpleStringProperty endereco, SimpleIntegerProperty porta) {
-        this.id = id;
-        this.endereco = endereco;
-        this.porta = porta;
-    }
-
-    // Constructor
     public Conexao(int id, String endereco, int porta) {
         this.id = new SimpleIntegerProperty(id);
         this.endereco = new SimpleStringProperty(endereco);
         this.porta = new SimpleIntegerProperty(porta);
     }
 
-    // Getters
     public int getId() {
         return id.get();
     }
@@ -37,12 +27,10 @@ public class Conexao {
         return endereco.get();
     }
 
-    // Setters
     public void setPorta(int value) {
         this.porta.set(value);
     }
 
-    // Property Getters
     public SimpleIntegerProperty idProperty() {
         return id;
     }
@@ -54,5 +42,4 @@ public class Conexao {
     public SimpleIntegerProperty portaProperty() {
         return porta;
     }
-
 }

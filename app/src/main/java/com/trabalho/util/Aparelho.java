@@ -6,22 +6,10 @@ import javafx.beans.property.SimpleStringProperty;
 public class Aparelho {
 
     private SimpleIntegerProperty id;
-
     private SimpleStringProperty endereco;
-
     private SimpleIntegerProperty aparelhosLigados;
-
     private SimpleIntegerProperty aparelhosDesligados;
 
-    public Aparelho(SimpleIntegerProperty id, SimpleStringProperty endereco, SimpleIntegerProperty aparelhosLigados,
-            SimpleIntegerProperty aparelhosDesligados) {
-        this.id = id;
-        this.endereco = endereco;
-        this.aparelhosLigados = aparelhosLigados;
-        this.aparelhosDesligados = aparelhosDesligados;
-    }
-
-    // Constructor
     public Aparelho(int id, String endereco, int aparelhosLigados, int aparelhosDesligados) {
         this.id = new SimpleIntegerProperty(id);
         this.endereco = new SimpleStringProperty(endereco);
@@ -29,7 +17,6 @@ public class Aparelho {
         this.aparelhosDesligados = new SimpleIntegerProperty(aparelhosDesligados);
     }
 
-    // Getters
     public int getId() {
         return id.get();
     }
@@ -46,7 +33,6 @@ public class Aparelho {
         return aparelhosDesligados.get();
     }
 
-    // Setters
     public void setAparelhosLigados(int value) {
         this.aparelhosLigados.set(value);
     }
@@ -55,7 +41,6 @@ public class Aparelho {
         this.aparelhosDesligados.set(value);
     }
 
-    // Property Getters
     public SimpleIntegerProperty idProperty() {
         return id;
     }
@@ -71,5 +56,4 @@ public class Aparelho {
     public SimpleIntegerProperty aparelhosDesligadosProperty() {
         return aparelhosDesligados;
     }
-
 }

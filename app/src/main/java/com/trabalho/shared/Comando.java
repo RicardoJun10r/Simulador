@@ -2,21 +2,16 @@ package com.trabalho.shared;
 
 public class Comando {
 
-    private Integer microcontrolador_id;
-
-    private Integer server_id;
-
-    private Integer microcontrolador_opcao;
-
-    private Integer server_opcao;
-
+    private Integer microcontroladorId;
+    private Integer serverId;
+    private Integer microcontroladorOpcao;
+    private Integer serverOpcao;
     private Integer opcao;
-
     private String endereco;
-
     private Integer porta;
 
-    public Comando() {}
+    public Comando() {
+    }
 
     public Comando(Integer opcao, String endereco, Integer porta) {
         this.opcao = opcao;
@@ -24,32 +19,32 @@ public class Comando {
         this.porta = porta;
     }
 
-    public Comando(Integer opcao, Integer microcontrolador_id, Integer microcontrolador_opcao) {
+    public Comando(Integer opcao, Integer microcontroladorId, Integer microcontroladorOpcao) {
         this.opcao = opcao;
-        this.microcontrolador_id = microcontrolador_id;
-        this.microcontrolador_opcao = microcontrolador_opcao;
+        this.microcontroladorId = microcontroladorId;
+        this.microcontroladorOpcao = microcontroladorOpcao;
     }
 
-    public Comando(Integer opcao, Integer microcontrolador_id, Integer server_id, Integer microcontrolador_opcao,
-                   Integer server_opcao) {
+    public Comando(Integer opcao, Integer microcontroladorId, Integer serverId,
+            Integer microcontroladorOpcao, Integer serverOpcao) {
         this.opcao = opcao;
-        this.microcontrolador_id = microcontrolador_id;
-        this.server_id = server_id;
-        this.microcontrolador_opcao = microcontrolador_opcao;
-        this.server_opcao = server_opcao;
+        this.microcontroladorId = microcontroladorId;
+        this.serverId = serverId;
+        this.microcontroladorOpcao = microcontroladorOpcao;
+        this.serverOpcao = serverOpcao;
     }
 
-    public Comando(Integer opcao, Integer microcontrolador_opcao, Integer microcontrolador_id, Integer server_opcao,
-                   String endereco, Integer porta) {
+    public Comando(Integer opcao, Integer microcontroladorOpcao, Integer microcontroladorId,
+            Integer serverOpcao, String endereco, Integer porta) {
         this.opcao = opcao;
-        this.microcontrolador_opcao = microcontrolador_opcao;
-        this.microcontrolador_id = microcontrolador_id;
-        this.server_opcao = server_opcao;
+        this.microcontroladorOpcao = microcontroladorOpcao;
+        this.microcontroladorId = microcontroladorId;
+        this.serverOpcao = serverOpcao;
         this.endereco = endereco;
         this.porta = porta;
     }
 
-
+    // Getters e setters
     public Integer getOpcao() {
         return opcao;
     }
@@ -58,36 +53,36 @@ public class Comando {
         this.opcao = opcao;
     }
 
-    public Integer getMicrocontrolador_id() {
-        return microcontrolador_id;
+    public Integer getMicrocontroladorId() {
+        return microcontroladorId;
     }
 
-    public void setMicrocontrolador_id(Integer microcontrolador_id) {
-        this.microcontrolador_id = microcontrolador_id;
+    public void setMicrocontroladorId(Integer microcontroladorId) {
+        this.microcontroladorId = microcontroladorId;
     }
 
-    public Integer getServer_id() {
-        return server_id;
+    public Integer getServerId() {
+        return serverId;
     }
 
-    public void setServer_id(Integer server_id) {
-        this.server_id = server_id;
+    public void setServerId(Integer serverId) {
+        this.serverId = serverId;
     }
 
-    public Integer getMicrocontrolador_opcao() {
-        return microcontrolador_opcao;
+    public Integer getMicrocontroladorOpcao() {
+        return microcontroladorOpcao;
     }
 
-    public void setMicrocontrolador_opcao(Integer microcontrolador_opcao) {
-        this.microcontrolador_opcao = microcontrolador_opcao;
+    public void setMicrocontroladorOpcao(Integer microcontroladorOpcao) {
+        this.microcontroladorOpcao = microcontroladorOpcao;
     }
 
-    public Integer getServer_opcao() {
-        return server_opcao;
+    public Integer getServerOpcao() {
+        return serverOpcao;
     }
 
-    public void setServer_opcao(Integer server_opcao) {
-        this.server_opcao = server_opcao;
+    public void setServerOpcao(Integer serverOpcao) {
+        this.serverOpcao = serverOpcao;
     }
 
     public String getEndereco() {
@@ -105,5 +100,4 @@ public class Comando {
     public void setPorta(Integer porta) {
         this.porta = porta;
     }
-
 }

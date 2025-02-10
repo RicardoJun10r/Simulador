@@ -3,19 +3,18 @@ package com.trabalho.shared;
 public class ServerReq extends Mensagem {
 
     private int opcao;
+    private int microcontroladorId;
 
-    private int microcontrolador_id;
-
-    public ServerReq(String endereco, int porta, String headers, String mensagem, int opcao, int microcontrolador_id) {
+    public ServerReq(String endereco, int porta, String headers, String mensagem, int opcao, int microcontroladorId) {
         super(endereco, porta, headers, mensagem);
         this.opcao = opcao;
-        this.microcontrolador_id = microcontrolador_id;
+        this.microcontroladorId = microcontroladorId;
     }
 
-    public ServerReq(String mensagem, int opcao, int microcontrolador_id) {
+    public ServerReq(String mensagem, int opcao, int microcontroladorId) {
         super(mensagem);
         this.opcao = opcao;
-        this.microcontrolador_id = microcontrolador_id;
+        this.microcontroladorId = microcontroladorId;
     }
 
     public int getOpcao() {
@@ -26,19 +25,19 @@ public class ServerReq extends Mensagem {
         this.opcao = opcao;
     }
 
-    public int getMicrocontrolador_id() {
-        return microcontrolador_id;
+    public int getMicrocontroladorId() {
+        return microcontroladorId;
     }
 
-    public void setMicrocontrolador_id(int microcontrolador_id) {
-        this.microcontrolador_id = microcontrolador_id;
+    public void setMicrocontroladorId(int microcontroladorId) {
+        this.microcontroladorId = microcontroladorId;
     }
 
     @Override
     public String toString() {
-        return "ServerReq [opcao=" + opcao + ", microcontrolador_id=" + microcontrolador_id + ", getEndereco()="
-                + getEndereco() + ", getPorta()=" + getPorta() + ", getHorario()=" + getHorario() + ", getHeaders()="
-                + getHeaders() + ", getMensagem()=" + getMensagem() + "]";
+        return "ServerReq [opcao=" + opcao + ", microcontroladorId=" + microcontroladorId +
+                ", endereco=" + getEndereco() + ", porta=" + getPorta() +
+                ", horario=" + getHorario() + ", headers=" + getHeaders() +
+                ", mensagem=" + getMensagem() + "]";
     }
-
 }

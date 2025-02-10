@@ -32,111 +32,91 @@ import javafx.collections.ObservableList;
 
 public class Servidor {
 
-    private final Boolean DEBUG;
-
-    private final String HOST;
-
-    private final Integer PORTA;
-
+    private final boolean debug;
+    private final String host;
+    private final int port;
     private BrokerQueue broker;
-
-    private IBrokerQueue listen_method;
-
+    private IBrokerQueue listenMethod;
     private ServerSocket serverSocket;
-
-    private Executor executor;
-
-    private Map<Integer, ClientSocket> USUARIOS = Collections.synchronizedMap(new HashMap<>());
-
-    private final Integer N_THREADS = 6;
-
-    private BlockingQueue<Comando> comandos = new LinkedBlockingQueue<>();
-
+    private final Executor executor;
+    private final Map<Integer, ClientSocket> usuarios = Collections.synchronizedMap(new HashMap<>());
+    private static final int NUM_THREADS = 6;
+    private final BlockingQueue<Comando> commandQueue = new LinkedBlockingQueue<>();
     private SimuladorController app;
+    private ObservableList<Aparelho> observableAparelhos;
+    private ObservableList<Conexao> observableServidores;
+    private final List<Integer> microcontroladoresIds = Collections.synchronizedList(new ArrayList<>());
 
-    private ObservableList<Aparelho> observableListAparelhos;
-
-    private ObservableList<Conexao> observableListServidores;
-
-    private List<Integer> microcontroladores_ids = Collections.synchronizedList(new ArrayList<>());
-
-    public Servidor(String host, int porta, String endereco_broker, Boolean debug, SimuladorController app) {
-        this.HOST = host;
-        this.PORTA = porta;
-        String[] TOPICO = { "servidor", "microcontrolador" };
-        this.broker = new BrokerQueue(endereco_broker, TOPICO, 0);
-        this.DEBUG = debug;
-        this.listenMicrocontrolador();
-        this.executor = Executors.newFixedThreadPool(N_THREADS);
+    public Servidor(String host, int port, String brokerAddress, boolean debug, SimuladorController app) {
+        this.host = host;
+        this.port = port;
+        this.debug = debug;
         this.app = app;
-        this.observableListAparelhos = this.app.getMicrocontroladoresTable();
-        this.observableListServidores = this.app.getServidoresTable();
+        this.observableAparelhos = (app != null) ? app.getMicrocontroladoresTable() : null;
+        this.observableServidores = (app != null) ? app.getServidoresTable() : null;
+
+        String[] topicos = { "servidor", "microcontrolador" };
+        this.broker = new BrokerQueue(brokerAddress, topicos, 0);
+        listenMicrocontrolador();
+        this.executor = Executors.newFixedThreadPool(NUM_THREADS);
     }
 
-    public Servidor(String host, int porta, String endereco_broker, Boolean debug) {
-        this.HOST = host;
-        this.PORTA = porta;
-        String[] TOPICO = { "servidor", "microcontrolador" };
-        this.broker = new BrokerQueue(endereco_broker, TOPICO, 0);
-        this.DEBUG = debug;
-        this.listenMicrocontrolador();
-        this.executor = Executors.newFixedThreadPool(N_THREADS);
+    public Servidor(String host, int port, String brokerAddress, boolean debug) {
+        this(host, port, brokerAddress, debug, null);
     }
 
-    public Servidor(String host, int porta, Boolean debug) {
-        this.HOST = host;
-        this.PORTA = porta;
-        this.DEBUG = debug;
-        this.executor = Executors.newFixedThreadPool(N_THREADS);
+    public Servidor(String host, int port, boolean debug) {
+        this(host, port, null, debug, null);
     }
 
-    public void initQueue(String endereco_broker) {
-        String[] TOPICO = { "servidor", "microcontrolador" };
-        this.broker = new BrokerQueue(endereco_broker, TOPICO, 0);
-        this.listenMicrocontrolador();
+    /**
+     * Inicializa a fila de mensagens (broker) caso não tenha sido configurado.
+     */
+    public void initQueue(String brokerAddress) {
+        String[] topicos = { "servidor", "microcontrolador" };
+        this.broker = new BrokerQueue(brokerAddress, topicos, 0);
+        listenMicrocontrolador();
     }
 
-    private Integer hash(Integer num) {
+    private Integer hash(int num) {
         return num % 101;
     }
 
-    private void add(Integer id, ClientSocket socket) {
-        this.USUARIOS.put(id, socket);
-        Platform.runLater(() -> {
-            this.observableListServidores.add(
-                    new Conexao(id, socket.getSocketAddress().toString(), socket.getPort()));
-        });
+    private void addUsuario(Integer id, ClientSocket socket) {
+        this.usuarios.put(id, socket);
+        if (observableServidores != null) {
+            Platform.runLater(() -> observableServidores.add(
+                    new Conexao(id, socket.getSocketAddress().toString(), socket.getPort())));
+        }
     }
 
-    private void server() {
-
+    /**
+     * Inicia o socket do servidor e os _threads_ para escuta de conexões e
+     * comandos.
+     */
+    private void startServerSocket() {
         try {
-            this.serverSocket = new ServerSocket(this.PORTA, 0, InetAddress.getByName(this.HOST));
-            System.out.println("INICIANDO: [" + this.HOST + ":" + this.PORTA + "]");
+            this.serverSocket = new ServerSocket(this.port, 0, InetAddress.getByName(this.host));
+            System.out.println("INICIANDO: [" + this.host + ":" + this.port + "]");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
-        this.sendweb(new ServerRes(
-            HOST, PORTA, "start", "INICIANDO SERVIDOR", "0", 0));
 
-        this.executor.execute(() -> {
-            serverLoop();
-        });
+        sendWeb(new ServerRes(this.host, this.port, "start", "INICIANDO SERVIDOR", "0", 0));
 
-        this.executor.execute(() -> {
-            painel();
-        });
-
+        executor.execute(this::serverLoop);
+        executor.execute(this::processCommandQueue);
     }
 
+    /**
+     * Loop principal que aceita novas conexões de clientes.
+     */
     private void serverLoop() {
         while (true) {
             try {
-                ClientSocket socket = new ClientSocket(this.serverSocket.accept(), DEBUG);
-                this.executor.execute(() -> {
-                    this.listen(socket);
-                });
+                Socket clientSocket = serverSocket.accept();
+                ClientSocket cs = new ClientSocket(clientSocket, debug);
+                executor.execute(() -> listenClient(cs));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -144,175 +124,183 @@ public class Servidor {
     }
 
     public void addComando(Comando novo) {
-        this.comandos.add(novo);
+        commandQueue.add(novo);
     }
 
-    private String metaDados(){
-        if(this.microcontroladores_ids.isEmpty()){
+    private String getMetaDados() {
+        if (microcontroladoresIds.isEmpty()) {
             return "";
-        }else {
-            return this.microcontroladores_ids.stream().map(String::valueOf).collect(Collectors.joining("."));
         }
+        return microcontroladoresIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining("."));
     }
 
-    private void painel() {
-        Comando novo_comando = new Comando();
+    /**
+     * Processa os comandos recebidos na fila de comandos.
+     */
+    private void processCommandQueue() {
+        Comando comando;
         do {
             try {
-                novo_comando = this.comandos.take();
-                switch (novo_comando.getOpcao()) {
-                    case 0: {
+                comando = commandQueue.take();
+                switch (comando.getOpcao()) {
+                    case 0:
                         System.out.println("[*] Mensagem publicada.0");
-                        this.broker.sendMessage(1, (novo_comando.getMicrocontrolador_id() + "."
-                                + novo_comando.getMicrocontrolador_opcao() + "." + this.PORTA));
+                        broker.sendMessage(1,
+                                comando.getMicrocontroladorId() + "." +
+                                        comando.getMicrocontroladorOpcao() + "." + this.port);
                         System.out.println("[*] Mensagem publicada.");
 
-                        this.sendweb(new ServerReq(this.HOST, this.PORTA,
-                                "server-microcontroller." + metaDados(),
+                        sendWeb(new ServerReq(this.host, this.port,
+                                "server-microcontroller." + getMetaDados(),
                                 "CONTROLANDO SALA",
-                                novo_comando.getMicrocontrolador_opcao(),
-                                novo_comando.getMicrocontrolador_id()));
+                                comando.getMicrocontroladorOpcao(),
+                                comando.getMicrocontroladorId()));
                         break;
-                    }
-                    case 1: {
-                        unicast(novo_comando.getServer_id(),
-                                new ServerReq(this.HOST, this.PORTA, "request", "SERVIDOR",
-                                        novo_comando.getServer_opcao(),
-                                        novo_comando.getMicrocontrolador_id()));
-                        ClientSocket ex = this.USUARIOS.get(novo_comando.getServer_id());
-                        this.sendweb(new ServerRes(
-                            HOST, PORTA, "server-server", "CONTROLANDO SERVIDOR." + metaDados() + "." + novo_comando.getServer_opcao(), ex.getSocketAddress().toString(), ex.getPort()));
+                    case 1:
+                        unicast(comando.getServerId(),
+                                new ServerReq(this.host, this.port, "request", "SERVIDOR",
+                                        comando.getServerOpcao(),
+                                        comando.getMicrocontroladorId()));
+                        ClientSocket cs = this.usuarios.get(comando.getServerId());
+                        if (cs != null) {
+                            sendWeb(new ServerRes(
+                                    host, port, "server-server." + getMetaDados(),
+                                    "CONTROLANDO SERVIDOR." + getMetaDados() + "." + comando.getServerOpcao(),
+                                    cs.getSocketAddress().toString(), cs.getPort()));
+                        }
                         break;
-                    }
-                    case 2: {
-                        this.USUARIOS.forEach((id, socket) -> {
-                            System.out.println(id + ": " + socket.getSocketAddress().toString());
-                        });
+                    case 2:
+                        usuarios.forEach(
+                                (id, socket) -> System.out.println(id + ": " + socket.getSocketAddress().toString()));
                         break;
-                    }
-                    case 3: {
+                    case 3:
                         try {
-                            ClientSocket novo = new ClientSocket(
-                                    new Socket(novo_comando.getEndereco(), novo_comando.getPorta()), DEBUG);
-                            add(hash(novo_comando.getPorta()), novo);
-                            novo.send(new ServerReq(this.HOST, this.PORTA, "ping", "", 0, 0));
-                            this.sendweb(new ServerRes(
-                                HOST, PORTA, "server-server." + metaDados(), "INICIANDO CONEXAO", novo_comando.getEndereco(), novo_comando.getPorta()));
+                            Socket newSocket = new Socket(comando.getEndereco(), comando.getPorta());
+                            ClientSocket novoCliente = new ClientSocket(newSocket, debug);
+                            addUsuario(hash(comando.getPorta()), novoCliente);
+                            novoCliente.send(new ServerReq(this.host, this.port, "ping", "", 0, 0));
+                            sendWeb(new ServerRes(
+                                    host, port, "server-server." + getMetaDados(),
+                                    "INICIANDO CONEXAO", comando.getEndereco(), comando.getPorta()));
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                         break;
-                    }
-                    default: {
+                    default:
                         System.out.println("ENTRADA INVÁLIDA");
                         break;
-                    }
                 }
-
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                break;
             }
-        } while (novo_comando.getOpcao() != -1);
+        } while (comando.getOpcao() != -1);
     }
 
-    private void sendweb(Mensagem msg) {
+    /**
+     * Envia uma mensagem para a "web" (ou outro sistema) via JSON.
+     */
+    private void sendWeb(Mensagem msg) {
         new Thread(() -> {
             System.out.println("WEB");
             if (msg instanceof ServerReq) {
-                ServerReq response = (ServerReq) msg;
-                ClientSocket.enviarComoJson(response);
-            }
-            if (msg instanceof ServerRes) {
-                ServerRes response = (ServerRes) msg;
-                ClientSocket.enviarComoJson(response);
+                ClientSocket.enviarComoJson((ServerReq) msg);
+            } else if (msg instanceof ServerRes) {
+                ClientSocket.enviarComoJson((ServerRes) msg);
             }
         }).start();
     }
 
     private void unicast(Integer id, Mensagem msg) {
         System.out.println(id + ": " + msg);
-        this.USUARIOS.get(id).send(msg);
+        ClientSocket cs = this.usuarios.get(id);
+        if (cs != null) {
+            cs.send(msg);
+        }
     }
 
-    private void unicast(String host, Integer port, String msg, String header) {
-        ClientSocket clientSocket;
+    private void unicast(String host, int port, String msg, String header) {
         try {
-            clientSocket = new ClientSocket(new Socket(host, port), false);
-            clientSocket.send(new ServerRes(host, port, header,
-                    msg, this.HOST, this.PORTA));
+            ClientSocket cs = new ClientSocket(new Socket(host, port), false);
+            cs.send(new ServerRes(host, port, header, msg, this.host, this.port));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void listen(ClientSocket cliente_socket) {
-        if (cliente_socket != null) {
-            Mensagem line;
-            while ((line = (Mensagem) cliente_socket.read()) != null) {
-                if (DEBUG) {
-                    System.out.println("DEBUG [" + cliente_socket.getSocketAddress().toString() + ":"
-                            + cliente_socket.getPort() + "]: " + line.toString());
+    private void listenClient(ClientSocket clientSocket) {
+        if (clientSocket != null) {
+            Mensagem message;
+            while ((message = (Mensagem) clientSocket.read()) != null) {
+                if (debug) {
+                    System.out.println("DEBUG [" + clientSocket.getSocketAddress() + ":" +
+                            clientSocket.getPort() + "]: " + message);
                 }
-
-                String headers = line.getHeaders();
-
-                if (headers.equalsIgnoreCase("ping")) {
-                    ClientSocket novo;
-                    try {
-                        novo = new ClientSocket(new Socket(line.getEndereco(), line.getPorta()), DEBUG);
-                        novo.send(new ServerRes(line.getEndereco(), line.getPorta(), "pong",
-                                "Servidor Alcancado!", this.HOST, this.PORTA));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (headers.equalsIgnoreCase("pong")) {
-                    if (line instanceof ServerRes) {
-                        ServerRes response = (ServerRes) line;
-                        System.out.println(response.getMensagem());
-                    }
-                }
-                if (headers.equals("request")) {
-                    if (line instanceof ServerReq) {
-                        ServerReq serverReq = (ServerReq) line;
-                        String req = serverReq.getMicrocontrolador_id() + "." + serverReq.getOpcao() + "."
-                                + serverReq.getPorta();
-                        this.broker.sendMessage(1, req);
-                    }
-                }
-                if (headers.equals("response")) {
-                    if (line instanceof ServerRes) {
-                        ServerRes response = (ServerRes) line;
-                        System.out.println(response.getMensagem());
-                        this.atualizarTabela(response);
-                    }
+                String header = message.getHeaders();
+                switch (header.toLowerCase()) {
+                    case "ping":
+                        try {
+                            ClientSocket newClient = new ClientSocket(
+                                    new Socket(message.getEndereco(), message.getPorta()), debug);
+                            newClient.send(new ServerRes(message.getEndereco(), message.getPorta(), "pong",
+                                    "Servidor Alcancado!", this.host, this.port));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    case "pong":
+                        if (message instanceof ServerRes) {
+                            System.out.println(((ServerRes) message).getMensagem());
+                        }
+                        break;
+                    case "request":
+                        if (message instanceof ServerReq) {
+                            ServerReq req = (ServerReq) message;
+                            String reqMsg = req.getMicrocontroladorId() + "." + req.getOpcao() + "." + req.getPorta();
+                            broker.sendMessage(1, reqMsg);
+                        }
+                        break;
+                    case "response":
+                        if (message instanceof ServerRes) {
+                            ServerRes response = (ServerRes) message;
+                            System.out.println(response.getMensagem());
+                            atualizarTabela(response);
+                        }
+                        break;
+                    default:
+                        System.out.println("Header não reconhecido: " + header);
+                        break;
                 }
             }
         }
     }
 
     private void listenMicrocontrolador() {
-        this.listen_method = (topico, mensagem) -> {
-            String response = new String(mensagem.getPayload());
-
-            if (DEBUG) {
-                System.out.println("\nUma mensagem foi recebida!" +
-                        "\n\tData/Hora:    " + new Timestamp(System.currentTimeMillis()).toString() +
-                        "\n\tTópico:   " + topico +
+        this.listenMethod = (topic, message) -> {
+            String response = new String(message.getPayload());
+            if (debug) {
+                System.out.println("\nMensagem recebida!" +
+                        "\n\tData/Hora: " + new Timestamp(System.currentTimeMillis()).toString() +
+                        "\n\tTópico: " + topic +
                         "\n\tMensagem: " + response +
-                        "\n\tQoS:     " + mensagem.getQos() + "\n");
+                        "\n\tQoS: " + message.getQos() + "\n");
             }
-
             String[] parts = response.split("\\.", 3);
-
             if (parts.length >= 3) {
-                int id = Integer.parseInt(parts[0]);
-
-                if(!this.microcontroladores_ids.contains(id)) 
-                    this.microcontroladores_ids.add(id);
-                
+                int id;
+                try {
+                    id = Integer.parseInt(parts[0]);
+                } catch (NumberFormatException e) {
+                    System.err.println("Formato de id inválido: " + parts[0]);
+                    return;
+                }
+                if (!microcontroladoresIds.contains(id)) {
+                    microcontroladoresIds.add(id);
+                }
                 String messageContent = parts[1];
-                String porta = parts[2];
+                String portStr = parts[2];
 
                 if (messageContent.startsWith("Sala com")) {
                     String[] lines = messageContent.split("\\*");
@@ -321,37 +309,34 @@ public class Servidor {
 
                     Platform.runLater(() -> {
                         Aparelho aparelho = null;
-                        for (Aparelho a : this.observableListAparelhos) {
+                        for (Aparelho a : observableAparelhos) {
                             if (a.getId() == id) {
                                 aparelho = a;
                                 break;
                             }
                         }
-
                         if (aparelho == null) {
-                            this.observableListAparelhos.add(new Aparelho(
+                            observableAparelhos.add(new Aparelho(
                                     id,
-                                    this.serverSocket.getLocalSocketAddress().toString(),
+                                    serverSocket.getLocalSocketAddress().toString(),
                                     ligados,
                                     desligados));
-                            System.out.println("Adicionado !");
+                            System.out.println("Aparelho adicionado!");
                         } else {
                             aparelho.setAparelhosLigados(ligados);
                             aparelho.setAparelhosDesligados(desligados);
-                            System.out.println("Atualizado !");
+                            System.out.println("Aparelho atualizado!");
                         }
                     });
                 }
-
-                if (!(porta.equals(String.valueOf(this.PORTA)))) {
-                    this.unicast(this.HOST, Integer.parseInt(porta), response, "response");
+                if (!portStr.equals(String.valueOf(this.port))) {
+                    unicast(this.host, Integer.parseInt(portStr), response, "response");
                 }
             } else {
-                System.err.println("Received message in unexpected format: " + response);
+                System.err.println("Formato da mensagem inesperado: " + response);
             }
         };
-
-        this.broker.setListen(listen_method);
+        this.broker.setListen(listenMethod);
     }
 
     private void atualizarTabela(ServerRes res) {
@@ -366,42 +351,38 @@ public class Servidor {
 
             Platform.runLater(() -> {
                 Aparelho aparelho = null;
-                for (Aparelho a : this.observableListAparelhos) {
+                for (Aparelho a : observableAparelhos) {
                     if (a.getId() == id) {
                         aparelho = a;
                         break;
                     }
                 }
-
                 if (aparelho == null) {
-                    this.observableListAparelhos.add(new Aparelho(
+                    observableAparelhos.add(new Aparelho(
                             id,
-                            "/" + res.getEndereco_response() + ":" + res.getPorta_response(),
+                            "/" + res.getEnderecoResponse() + ":" + res.getPortaResponse(),
                             ligados,
                             desligados));
-                    System.out.println("Adicionado !");
+                    System.out.println("Aparelho adicionado!");
                 } else {
                     aparelho.setAparelhosLigados(ligados);
                     aparelho.setAparelhosDesligados(desligados);
-                    System.out.println("Atualizado !");
+                    System.out.println("Aparelho atualizado!");
                 }
             });
         }
     }
 
     public void startServer() {
-        this.server();
+        startServerSocket();
     }
 
     public void startQueue() {
-        this.broker.start();
+        broker.start();
     }
 
     public void start() {
-        new Thread(() -> {
-            this.broker.start();
-        }).start();
-        this.server();
+        new Thread(broker::start).start();
+        startServerSocket();
     }
-
 }

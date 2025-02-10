@@ -1,7 +1,5 @@
 package com.trabalho.broker;
 
-import java.util.concurrent.CountDownLatch;
-
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -11,107 +9,136 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 public class BrokerQueue {
 
-    private final String[] TOPICO;
+    private final String[] topics;
+    private final String brokerUrl;
+    private final int qos;
+    private MqttClient mqttClient;
+    private IBrokerQueue listenMethod;
 
-    private final String BROKER;
-
-    private static MqttClient mqtt;
-
-    private IBrokerQueue listen_method;
-
-    private Integer Qos;
-
-    public BrokerQueue(String broker_uri, String[] topicos, int Qos) {
-        this.BROKER = broker_uri;
-        this.TOPICO = topicos;
-        this.Qos = Qos;
-        this.initClient();
+    /**
+     * Construtor.
+     *
+     * @param brokerUrl Endereço do broker.
+     * @param topics    Array com os tópicos a serem utilizados.
+     * @param qos       Qualidade do serviço.
+     */
+    public BrokerQueue(String brokerUrl, String[] topics, int qos) {
+        this.brokerUrl = brokerUrl;
+        this.topics = topics;
+        this.qos = qos;
+        initClient();
     }
 
-    public void setListen(IBrokerQueue listen_method) {
-        this.listen_method = listen_method;
+    /**
+     * Define o callback para mensagens recebidas.
+     *
+     * @param listenMethod Instância que implementa IBrokerQueue.
+     */
+    public void setListen(IBrokerQueue listenMethod) {
+        this.listenMethod = listenMethod;
     }
 
+    /**
+     * Inicializa o cliente MQTT.
+     */
     private void initClient() {
         try {
-            String idCliente = MqttClient.generateClientId();
-            System.out.println("[*] ID do Cliente: " + idCliente);
-            mqtt = new MqttClient(BROKER, idCliente);
-            MqttConnectOptions opcoesDaConexao = new MqttConnectOptions();
-            opcoesDaConexao.setCleanSession(true);
-            opcoesDaConexao.setAutomaticReconnect(true);
-            opcoesDaConexao.setKeepAliveInterval(60);
-            System.out.println("[*] Conectando-se ao broker " + BROKER);
-            mqtt.connect(opcoesDaConexao);
-            System.out.println("[*] Conectado: " + mqtt.isConnected());
+            String clientId = MqttClient.generateClientId();
+            System.out.println("[*] Client ID: " + clientId);
+            mqttClient = new MqttClient(brokerUrl, clientId);
+            MqttConnectOptions connectOptions = new MqttConnectOptions();
+            connectOptions.setCleanSession(true);
+            connectOptions.setAutomaticReconnect(true);
+            connectOptions.setKeepAliveInterval(60);
+            System.out.println("[*] Conectando ao broker " + brokerUrl);
+            mqttClient.connect(connectOptions);
+            System.out.println("[*] Conectado: " + mqttClient.isConnected());
         } catch (MqttException e) {
+            System.err.println("Erro ao inicializar cliente MQTT: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private void initQueue() {
-        if (this.listen_method == null) {
-            System.out.println("MÉTODO [IBrokerQueue listen_method] NÃO DEFINIDO");
+    /**
+     * Inicia a inscrição nos tópicos e configura o callback para receber mensagens.
+     */
+    private void startListening() {
+        if (listenMethod == null) {
+            System.err.println("Callback não definido. Use setListen() para definir um método de escuta.");
             return;
         }
         try {
-            final CountDownLatch trava = new CountDownLatch(20);
-            mqtt.setCallback((MqttCallback) new MqttCallback() {
-                public void messageArrived(String topico, MqttMessage mensagem) throws Exception {
-                    listen_method.listen(topico, mensagem);
-                    trava.countDown();
+            mqttClient.setCallback(new MqttCallback() {
+                @Override
+                public void connectionLost(Throwable cause) {
+                    System.err.println("Conexão perdida: " + cause.getMessage());
+                    cause.printStackTrace();
                 }
 
-                public void connectionLost(Throwable causa) {
-                    System.out.println("Conexão com o broker foi perdida!" + causa.getMessage());
-                    causa.printStackTrace();
-                    trava.countDown();
+                @Override
+                public void messageArrived(String topic, MqttMessage message) throws Exception {
+                    listenMethod.listen(topic, message);
                 }
 
+                @Override
                 public void deliveryComplete(IMqttDeliveryToken token) {
-
+                    // Método opcional para tratar a confirmação de entrega.
                 }
-
             });
-            System.out.println("[*] Inscrevendo cliente no tópico: " + TOPICO[0]);
-            mqtt.subscribe(TOPICO[0], this.Qos);
-            System.out.println("[*] Incrito!");
-
-            try {
-                trava.await();
-            } catch (InterruptedException e) {
-                System.out.println("[*] Me acordaram enquanto eu esperava zzzzz");
+            if (topics != null && topics.length > 0) {
+                System.out.println("[*] Inscrevendo no tópico: " + topics[0]);
+                mqttClient.subscribe(topics[0], qos);
+                System.out.println("[*] Inscrito com sucesso!");
+            } else {
+                System.err.println("Nenhum tópico informado para inscrição.");
             }
-            this.close();
-        } catch (MqttException me) {
-            throw new RuntimeException(me);
+        } catch (MqttException e) {
+            throw new RuntimeException("Erro durante a inscrição no tópico", e);
         }
     }
 
-    public void sendMessage(int topico, String mensage) {
+    /**
+     * Publica uma mensagem no tópico especificado.
+     *
+     * @param topicIndex  Índice do tópico no array.
+     * @param messageText Conteúdo da mensagem.
+     */
+    public void sendMessage(int topicIndex, String messageText) {
+        if (topicIndex < 0 || topicIndex >= topics.length) {
+            System.err.println("Índice de tópico inválido: " + topicIndex);
+            return;
+        }
         try {
-            MqttMessage response = new MqttMessage(mensage.getBytes());
-            response.setQos(this.Qos);
-            System.out.println("[*] Publicando mensagem: " + mensage);
-            mqtt.publish(TOPICO[topico], response);
+            MqttMessage message = new MqttMessage(messageText.getBytes());
+            message.setQos(qos);
+            System.out.println("[*] Publicando mensagem: " + messageText);
+            mqttClient.publish(topics[topicIndex], message);
         } catch (MqttException e) {
+            System.err.println("Erro ao publicar mensagem: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+    /**
+     * Encerra a conexão com o broker.
+     */
     public void close() {
         try {
-            mqtt.disconnect();
-            System.out.println("[*] Finalizando...");
-            System.exit(0);
-            mqtt.close();
+            if (mqttClient != null && mqttClient.isConnected()) {
+                mqttClient.disconnect();
+                System.out.println("[*] Desconectado do broker.");
+                mqttClient.close();
+            }
         } catch (MqttException e) {
+            System.err.println("Erro ao fechar conexão MQTT: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+    /**
+     * Inicia a escuta (subscription) conforme a configuração do callback.
+     */
     public void start() {
-        this.initQueue();
+        startListening();
     }
-
 }

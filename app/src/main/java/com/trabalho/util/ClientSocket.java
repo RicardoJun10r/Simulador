@@ -18,60 +18,57 @@ import com.trabalho.shared.Mensagem;
 
 public class ClientSocket {
 
-    private final Socket SOCKET;
+    private final Socket socket;
+    private final ObjectOutputStream out;
+    private final ObjectInputStream in;
+    private final boolean debug;
 
-    private final ObjectOutputStream ESCREVER;
-
-    private final ObjectInputStream LER;
-
-    private final Boolean DEBUG;
-
-    public ClientSocket(Socket socket, Boolean debug) throws IOException {
-        this.SOCKET = socket;
-        this.DEBUG = debug;
-        if (this.DEBUG) {
-            System.out.println("Cliente = " + this.SOCKET.getRemoteSocketAddress() + " conectado!");
+    public ClientSocket(Socket socket, boolean debug) throws IOException {
+        this.socket = socket;
+        this.debug = debug;
+        if (this.debug) {
+            System.out.println("Cliente " + this.socket.getRemoteSocketAddress() + " conectado!");
         }
-        this.ESCREVER = new ObjectOutputStream(this.SOCKET.getOutputStream());
-        this.LER = new ObjectInputStream(this.SOCKET.getInputStream());
+        this.out = new ObjectOutputStream(this.socket.getOutputStream());
+        this.in = new ObjectInputStream(this.socket.getInputStream());
     }
 
     public SocketAddress getSocketAddress() {
-        return this.SOCKET.getRemoteSocketAddress();
+        return socket.getRemoteSocketAddress();
     }
 
-    public Integer getPort() {
-        return this.SOCKET.getPort();
+    public int getPort() {
+        return socket.getPort();
     }
 
     public void send(Object obj) {
         try {
-            if (this.DEBUG) {
-                System.out.println("ENVIANDO: " + obj.toString());
+            if (debug) {
+                System.out.println("ENVIANDO: " + obj);
             }
-            this.ESCREVER.writeObject(obj);
-            this.ESCREVER.flush();
+            out.writeObject(obj);
+            out.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public Object read() {
-        Object obj = null;
         try {
-            obj = this.LER.readObject();
-            if (this.DEBUG) {
-                System.out.println("LENDO: " + obj.toString());
+            Object obj = in.readObject();
+            if (debug) {
+                System.out.println("LENDO: " + obj);
             }
-        } catch (ClassNotFoundException | IOException e) {
+            return obj;
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+            return null;
         }
-        return obj;
     }
 
     public void closeRead() {
         try {
-            this.LER.close();
+            in.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -79,7 +76,7 @@ public class ClientSocket {
 
     public void closeWrite() {
         try {
-            this.ESCREVER.close();
+            out.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -87,32 +84,31 @@ public class ClientSocket {
 
     public void close() {
         try {
-            this.closeRead();
-            this.closeWrite();
-            this.SOCKET.close();
+            closeRead();
+            closeWrite();
+            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Envia a mensagem como JSON para o servidor que escuta na porta 4000.
+     * 
+     * @param msg A mensagem a ser enviada.
+     */
     public static void enviarComoJson(Mensagem msg) {
-        // Cria uma instância de Gson (ou reutilize uma estática)
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class,
                         (JsonSerializer<LocalDateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
                 .create();
-
         String json = gson.toJson(msg);
-
-        // Envia o JSON através do socket
         try (Socket s = new Socket("127.0.0.1", 4000);
                 PrintWriter out = new PrintWriter(new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8),
                         true)) {
-            // Imprime o JSON no socket
             out.println(json);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
 }

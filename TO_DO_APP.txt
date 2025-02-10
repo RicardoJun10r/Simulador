@@ -1,0 +1,12 @@
+TO-DO
+1 - Cor dos textos nas tabelas
+2 - Cor dos textos no ComboBox
+3 - Nao precisar digitar URI do broker
+4 - Permitir ao usuario escolher o nome do topico do broker
+	4.1 - Alterar Microcontrolador, topico do broker ser escolhido via entrada
+	4.2 - Alterar Servidor, topico ser escolhido pelo usuario
+5 - Adicionar em um grid um canvas dos microcontroladores no ambiente
+6 - Melhorar interface do servidor WEB
+7 - Rodar a aplicacao com o servidor WEB na rede
+8 - Adicionar tratamento de falhas
+9 - Adicionar seguranca no sistema
