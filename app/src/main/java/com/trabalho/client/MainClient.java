@@ -5,7 +5,7 @@ import com.trabalho.salaAula.Sala;
 public class MainClient {
     final static String[] BROKER = { "tcp://mqtt.eclipseprojects.io:1883", "tcp://test.mosquitto.org:1883",
             "tcp://broker.hivemq.com:1883" };
-    final static String[] TOPICOS = { "sala2", "servidor2" };
+    final static String[] TOPICOS = { "sala1", "servidor1" };
 
     public static void main(String[] args) {
         Sala sala = new Sala(16);
