@@ -5,7 +5,7 @@ TO-DO
 4 - Permitir ao usuario escolher o nome do topico do broker
 	4.1 - Alterar Microcontrolador, topico do broker ser escolhido via entrada V
 	4.2 - Alterar Servidor, topico ser escolhido pelo usuario V
-5 - Adicionar em um grid um canvas dos microcontroladores no ambiente
+5 - Adicionar em um grid um canvas dos microcontroladores no ambiente V
 6 - Melhorar interface do servidor WEB
 7 - Rodar a aplicacao com o servidor WEB na rede
 8 - Adicionar tratamento de falhas

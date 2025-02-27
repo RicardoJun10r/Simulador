@@ -42,16 +42,15 @@ public class Servidor {
     private final Map<Integer, ClientSocket> usuarios = Collections.synchronizedMap(new HashMap<>());
     private static final int NUM_THREADS = 6;
     private final BlockingQueue<Comando> commandQueue = new LinkedBlockingQueue<>();
-    private SimuladorController app;
     private ObservableList<Aparelho> observableAparelhos;
     private ObservableList<Conexao> observableServidores;
     private final List<Integer> microcontroladoresIds = Collections.synchronizedList(new ArrayList<>());
 
-    public Servidor(String host, int port, String brokerAddress, String[] topicos, boolean debug, SimuladorController app) {
+    public Servidor(String host, int port, String brokerAddress, String[] topicos, boolean debug,
+            SimuladorController app) {
         this.host = host;
         this.port = port;
         this.debug = debug;
-        this.app = app;
         this.observableAparelhos = (app != null) ? app.getMicrocontroladoresTable() : null;
         this.observableServidores = (app != null) ? app.getServidoresTable() : null;
 
@@ -59,14 +58,6 @@ public class Servidor {
         listenMicrocontrolador();
         this.executor = Executors.newFixedThreadPool(NUM_THREADS);
     }
-
-    // public Servidor(String host, int port, String brokerAddress, boolean debug) {
-    //     this(host, port, brokerAddress, debug, null);
-    // }
-
-    // public Servidor(String host, int port, boolean debug) {
-    //     this(host, port, null, debug, null);
-    // }
 
     /**
      * Inicializa a fila de mensagens (broker) caso não tenha sido configurado.
