@@ -43,6 +43,7 @@ import com.trabalho.server.Servidor;
 import com.trabalho.shared.Comando;
 import com.trabalho.util.Aparelho;
 import com.trabalho.util.Conexao;
+import com.trabalho.controller.styles.Estilos;
 
 public class SimuladorController {
 
@@ -84,102 +85,6 @@ public class SimuladorController {
     private final ObservableList<Aparelho> microcontroladoresData = FXCollections.observableArrayList();
     private final ObservableList<Conexao> servidoresData = FXCollections.observableArrayList();
 
-    /* =================== Constantes de Estilo =================== */
-    private static final String DIALOG_STYLE = "-fx-background-color: #F2F2F2;";
-    private static final String CARD_STYLE = """
-            -fx-background-color: #FFFFFF;
-            -fx-border-color: #7F534B;
-            -fx-border-radius: 8;
-            -fx-background-radius: 8;
-            -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 0);
-            -fx-padding: 15;
-            """;
-    private static final String BUTTON_STYLE = """
-            -fx-background-color: #7F534B;
-            -fx-text-fill: #E5F2C9;
-            -fx-font-weight: bold;
-            -fx-padding: 10 20;
-            -fx-background-radius: 6;
-            -fx-cursor: hand;
-            """;
-
-    private static final String CANCEL_BUTTON_STYLE = """
-            -fx-background-color: #8C705F;
-            -fx-text-fill: #E5F2C9;
-            -fx-font-weight: bold;
-            -fx-padding: 10 20;
-            -fx-background-radius: 6;
-            -fx-cursor: hand;
-            """;
-    private static final String TITLE_STYLE = """
-            -fx-font-size: 20px;
-            -fx-font-weight: bold;
-            -fx-text-fill: #1E1A1D;
-            -fx-padding: 0 0 10 0;
-            """;
-    private static final String LABEL_STYLE = """
-            -fx-font-size: 14px;
-            -fx-font-weight: bold;
-            -fx-text-fill: #1E1A1D;
-            """;
-    private static final String TABLE_STYLE = """
-            -fx-background-color: #1E1A1D;
-            -fx-border-color: #7F534B;
-            -fx-border-radius: 8;
-            -fx-background-radius: 8;
-            -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 0);
-            -fx-text-fill: #1E1A1D;
-            """;
-    private static final String TABLE_HEADER_STYLE = """
-            -fx-background-color: #7F534B;
-            -fx-font-weight: bold;
-            -fx-font-size: 13px;
-            -fx-padding: 12px;
-            -fx-border-color: transparent transparent #8C705F transparent;
-            -fx-text-fill: #1E1A1D;
-            """;
-    private static final String TABLE_CELL_STYLE = """
-            -fx-padding: 12px;
-            -fx-alignment: center-left;
-            -fx-text-fill: #1E1A1D;
-            """;
-    private static final String RADIO_BUTTON_STYLE = "-fx-text-fill: #1E1A1D;";
-    private static final String TEXT_FIELD_STYLE = """
-            -fx-background-color: #F2F2F2;
-            -fx-text-fill: #1E1A1D;
-            -fx-prompt-text-fill: #8C705F;
-            -fx-border-color: #7F534B;
-            -fx-border-radius: 4;
-            -fx-background-radius: 4;
-            """;
-    private static final String COMBO_BOX_STYLE = """
-            -fx-background-color: #F2F2F2;
-            -fx-text-fill: #1E1A1D;
-            -fx-prompt-text-fill: #8C705F;
-            -fx-background-radius: 4;
-            -fx-border-color: #7F534B;
-            -fx-border-radius: 4;
-            """;
-    private static final String COMBO_BOX_STYLESHEET = """
-            .custom-combo-box .list-cell {
-                -fx-text-fill: #1E1A1D;
-                -fx-background-color: #F2F2F2;
-            }
-            .custom-combo-box .list-cell:hover {
-                -fx-background-color: #7F534B;
-            }
-            .custom-combo-box .list-view {
-                -fx-background-color: #F2F2F2;
-                -fx-border-color: #7F534B;
-            }
-            .custom-combo-box .arrow-button {
-                -fx-background-color: #7F534B;
-            }
-            .custom-combo-box .arrow {
-                -fx-background-color: #E5F2C9;
-            }
-            """;
-
     /* =================== Métodos de Acesso =================== */
     public ObservableList<Aparelho> getMicrocontroladoresTable() {
         return microcontroladoresData;
@@ -214,16 +119,16 @@ public class SimuladorController {
         idServidorList.setAll(servidoresData.stream().map(Conexao::getId).collect(Collectors.toList()));
 
         // Aplica estilos às tabelas e cabeçalhos
-        microcontroladores_tabela.setStyle(TABLE_STYLE);
-        servidores_tabela.setStyle(TABLE_STYLE);
+        microcontroladores_tabela.setStyle(Estilos.TABLE_STYLE);
+        servidores_tabela.setStyle(Estilos.TABLE_STYLE);
 
-        colMId.setStyle(TABLE_HEADER_STYLE);
-        colMEndereco.setStyle(TABLE_HEADER_STYLE);
-        colAparelhosLigados.setStyle(TABLE_HEADER_STYLE);
-        colAparelhosDesligados.setStyle(TABLE_HEADER_STYLE);
-        colSId.setStyle(TABLE_HEADER_STYLE);
-        colSEndereco.setStyle(TABLE_HEADER_STYLE);
-        colPorta.setStyle(TABLE_HEADER_STYLE);
+        colMId.setStyle(Estilos.TABLE_HEADER_STYLE);
+        colMEndereco.setStyle(Estilos.TABLE_HEADER_STYLE);
+        colAparelhosLigados.setStyle(Estilos.TABLE_HEADER_STYLE);
+        colAparelhosDesligados.setStyle(Estilos.TABLE_HEADER_STYLE);
+        colSId.setStyle(Estilos.TABLE_HEADER_STYLE);
+        colSEndereco.setStyle(Estilos.TABLE_HEADER_STYLE);
+        colPorta.setStyle(Estilos.TABLE_HEADER_STYLE);
 
         // Define células com estilo para cada coluna
         colMId.setCellFactory(col -> createStyledTableCell());
@@ -246,7 +151,6 @@ public class SimuladorController {
         // microcontroladores)
         servidoresData.addListener((ListChangeListener<Conexao>) change -> setupNetworkAnimation());
         microcontroladoresData.addListener((ListChangeListener<Aparelho>) change -> setupNetworkAnimation());
-
     }
 
     private <S, T> TableCell<S, T> createStyledTableCell() {
@@ -259,7 +163,7 @@ public class SimuladorController {
                     setGraphic(null);
                 } else {
                     setText(item.toString());
-                    setStyle(TABLE_CELL_STYLE);
+                    setStyle(Estilos.TABLE_CELL_STYLE);
                 }
             }
         };
@@ -267,10 +171,10 @@ public class SimuladorController {
 
     private <T> TableRow<T> createHoverableTableRow() {
         TableRow<T> row = new TableRow<>();
-        row.setStyle("-fx-background-color: white;");
+        row.setStyle("-fx-background-color: #FFFFFF;");
         row.hoverProperty().addListener((obs, wasHovered, isNowHovered) -> {
             if (!row.isEmpty()) {
-                row.setStyle(isNowHovered ? "-fx-background-color: #f5f5f5;" : "-fx-background-color: white;");
+                row.setStyle(isNowHovered ? "-fx-background-color: #F5F5F5;" : "-fx-background-color: #FFFFFF;");
             }
         });
         return row;
@@ -302,15 +206,14 @@ public class SimuladorController {
             double triangleSize = 40;
             Polygon triangle = new Polygon();
             triangle.getPoints().addAll(
-                    x - triangleSize / 2, serverY + triangleSize / 2, // canto inferior esquerdo
-                    x + triangleSize / 2, serverY + triangleSize / 2, // canto inferior direito
-                    x, serverY - triangleSize / 2 // topo central
-            );
+                    x - triangleSize / 2, serverY + triangleSize / 2,
+                    x + triangleSize / 2, serverY + triangleSize / 2,
+                    x, serverY - triangleSize / 2);
             triangle.setFill(Color.DARKBLUE);
             animationPane.getChildren().add(triangle);
         }
 
-        // Conecta os servidores entre si (se houver mais de um)
+        // Conecta os servidores entre si
         if (serverPositions.size() > 1) {
             for (int i = 0; i < serverPositions.size() - 1; i++) {
                 Point2D p1 = serverPositions.get(i);
@@ -324,7 +227,6 @@ public class SimuladorController {
 
         // ---- Desenhar os Microcontroladores (quadrados) e conexões ----
         int microCount = microcontroladoresData.size();
-
         double microCenterX = paneWidth / 2;
         double microCenterY = paneHeight * 0.65;
         double distribRadius = Math.min(paneWidth, paneHeight) / 3;
@@ -334,13 +236,11 @@ public class SimuladorController {
             double microX = microCenterX + distribRadius * Math.cos(angle);
             double microY = microCenterY + distribRadius * Math.sin(angle);
 
-            // Cria um quadrado centrado em (microX, microY)
             double rectSize = 20;
             Rectangle square = new Rectangle(microX - rectSize / 2, microY - rectSize / 2, rectSize, rectSize);
             square.setFill(Color.FORESTGREEN);
             animationPane.getChildren().add(square);
 
-            // Animação de pulso para o quadrado
             ScaleTransition st = new ScaleTransition(Duration.seconds(1.5), square);
             st.setFromX(1.0);
             st.setFromY(1.0);
@@ -350,7 +250,6 @@ public class SimuladorController {
             st.setAutoReverse(true);
             st.play();
 
-            // Conecta este microcontrolador a cada servidor
             for (Point2D serverPos : serverPositions) {
                 Line connectionLine = new Line(serverPos.getX(), serverPos.getY(), microX, microY);
                 connectionLine.setStroke(Color.GRAY);
@@ -397,25 +296,25 @@ public class SimuladorController {
         Stage dialog = createDialogStage("Adicionar Conexão");
 
         Label titleLabel = new Label("Adicionar Novas Conexões");
-        titleLabel.setStyle(TITLE_STYLE);
+        titleLabel.setStyle(Estilos.TITLE_STYLE);
 
         VBox form = new VBox(15);
-        form.setStyle(CARD_STYLE);
+        form.setStyle(Estilos.CARD_STYLE);
 
         Label addressLabel = new Label("Endereço:");
-        addressLabel.setStyle(LABEL_STYLE);
+        addressLabel.setStyle(Estilos.LABEL_STYLE);
         TextField addressField = new TextField("127.0.0.1");
-        addressField.setStyle(TEXT_FIELD_STYLE);
+        addressField.setStyle(Estilos.TEXT_FIELD_STYLE);
 
         Label portLabel = new Label("Porta:");
-        portLabel.setStyle(LABEL_STYLE);
+        portLabel.setStyle(Estilos.LABEL_STYLE);
         TextField portField = new TextField("5001");
-        portField.setStyle(TEXT_FIELD_STYLE);
+        portField.setStyle(Estilos.TEXT_FIELD_STYLE);
 
         Button conectar = new Button("Conectar");
-        conectar.setStyle(BUTTON_STYLE);
+        conectar.setStyle(Estilos.BUTTON_STYLE);
         Button cancelar = new Button("Cancelar");
-        cancelar.setStyle(CANCEL_BUTTON_STYLE);
+        cancelar.setStyle(Estilos.CANCEL_BUTTON_STYLE);
 
         conectar.setOnAction(e -> {
             String enderecoNc = addressField.getText();
@@ -454,35 +353,35 @@ public class SimuladorController {
         Stage dialog = createDialogStage("Configuração do Servidor");
 
         Label titleLabel = new Label("Configurar Servidor");
-        titleLabel.setStyle(TITLE_STYLE);
+        titleLabel.setStyle(Estilos.TITLE_STYLE);
 
         VBox form = new VBox(15);
-        form.setStyle(CARD_STYLE);
+        form.setStyle(Estilos.CARD_STYLE);
 
         Label addressLabel = new Label("Endereço:");
-        addressLabel.setStyle(LABEL_STYLE);
+        addressLabel.setStyle(Estilos.LABEL_STYLE);
         TextField addressField = new TextField("127.0.0.1");
-        addressField.setStyle(TEXT_FIELD_STYLE);
+        addressField.setStyle(Estilos.TEXT_FIELD_STYLE);
 
         Label portLabel = new Label("Porta:");
-        portLabel.setStyle(LABEL_STYLE);
+        portLabel.setStyle(Estilos.LABEL_STYLE);
         TextField portField = new TextField("5000");
-        portField.setStyle(TEXT_FIELD_STYLE);
+        portField.setStyle(Estilos.TEXT_FIELD_STYLE);
 
         Label servidorLabel = new Label("login");
-        servidorLabel.setStyle(LABEL_STYLE);
+        servidorLabel.setStyle(Estilos.LABEL_STYLE);
         TextField servidorField = new TextField();
-        servidorField.setStyle(TEXT_FIELD_STYLE);
+        servidorField.setStyle(Estilos.TEXT_FIELD_STYLE);
 
         Label topicoLabel = new Label("Conectar a qual sala ?");
-        topicoLabel.setStyle(LABEL_STYLE);
+        topicoLabel.setStyle(Estilos.LABEL_STYLE);
         TextField topicoField = new TextField("sala1");
-        topicoField.setStyle(TEXT_FIELD_STYLE);
+        topicoField.setStyle(Estilos.TEXT_FIELD_STYLE);
 
         Button ligar = new Button("Iniciar Servidor");
-        ligar.setStyle(BUTTON_STYLE);
+        ligar.setStyle(Estilos.BUTTON_STYLE);
         Button cancelar = new Button("Cancelar");
-        cancelar.setStyle(CANCEL_BUTTON_STYLE);
+        cancelar.setStyle(Estilos.CANCEL_BUTTON_STYLE);
 
         ligar.setOnAction(e -> {
             endereco = addressField.getText();
@@ -526,8 +425,7 @@ public class SimuladorController {
 
         styleDialog(dialog, container);
         Scene scene = new Scene(container);
-        // Adiciona stylesheet customizado para ComboBox
-        scene.getStylesheets().add("data:text/css," + COMBO_BOX_STYLESHEET.replaceAll("\n", ""));
+        scene.getStylesheets().add("data:text/css," + Estilos.COMBO_BOX_STYLESHEET.replaceAll("\n", ""));
         dialog.setScene(scene);
         dialog.showAndWait();
     }
@@ -536,19 +434,19 @@ public class SimuladorController {
         Stage dialog = createDialogStage("Servidor");
 
         Label titleLabel = new Label("Controle de Servidores");
-        titleLabel.setStyle(TITLE_STYLE);
+        titleLabel.setStyle(Estilos.TITLE_STYLE);
 
         VBox form = new VBox(10);
-        form.setStyle(CARD_STYLE);
+        form.setStyle(Estilos.CARD_STYLE);
 
         Label idServidorLabel = new Label("ID do Servidor:");
-        idServidorLabel.setStyle(LABEL_STYLE);
+        idServidorLabel.setStyle(Estilos.LABEL_STYLE);
         ComboBox<Integer> idServidorComboBox = new ComboBox<>(idServidorList);
         idServidorComboBox.setMaxWidth(Double.MAX_VALUE);
-        idServidorComboBox.setStyle(COMBO_BOX_STYLE);
+        idServidorComboBox.setStyle(Estilos.COMBO_BOX_STYLE);
 
         Label opcoesLabel = new Label("Opções:");
-        opcoesLabel.setStyle(LABEL_STYLE);
+        opcoesLabel.setStyle(Estilos.LABEL_STYLE);
         ToggleGroup opcaoServidorGroup = new ToggleGroup();
         RadioButton desligar = createRadioButton("Desligar", opcaoServidorGroup);
         RadioButton ligar = createRadioButton("Ligar", opcaoServidorGroup);
@@ -556,16 +454,16 @@ public class SimuladorController {
         VBox opcoesBox = new VBox(5, desligar, ligar, descrever);
 
         Label destinoLabel = new Label("Destino:");
-        destinoLabel.setStyle(LABEL_STYLE);
+        destinoLabel.setStyle(Estilos.LABEL_STYLE);
         ToggleGroup destinoGroup = new ToggleGroup();
         RadioButton umaSala = createRadioButton("Uma Sala", destinoGroup);
         RadioButton todasSalas = createRadioButton("Todas as Salas", destinoGroup);
         VBox destinoBox = new VBox(5, umaSala, todasSalas);
 
         Label idMicroLabel = new Label("ID do Microcontrolador:");
-        idMicroLabel.setStyle(LABEL_STYLE);
+        idMicroLabel.setStyle(Estilos.LABEL_STYLE);
         TextField idMicroField = new TextField();
-        idMicroField.setStyle(TEXT_FIELD_STYLE);
+        idMicroField.setStyle(Estilos.TEXT_FIELD_STYLE);
         idMicroLabel.setVisible(false);
         idMicroField.setVisible(false);
         destinoGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
@@ -575,9 +473,9 @@ public class SimuladorController {
         });
 
         Button enviar = new Button("Enviar");
-        enviar.setStyle(BUTTON_STYLE);
+        enviar.setStyle(Estilos.BUTTON_STYLE);
         Button cancelar = new Button("Cancelar");
-        cancelar.setStyle(CANCEL_BUTTON_STYLE);
+        cancelar.setStyle(Estilos.CANCEL_BUTTON_STYLE);
 
         enviar.setOnAction(e -> {
             Integer idServidor = idServidorComboBox.getValue();
@@ -641,7 +539,7 @@ public class SimuladorController {
         styleDialog(dialog, container);
         Scene scene = new Scene(container);
         idServidorComboBox.getStyleClass().add("custom-combo-box");
-        scene.getStylesheets().add("data:text/css," + COMBO_BOX_STYLESHEET.replaceAll("\n", ""));
+        scene.getStylesheets().add("data:text/css," + Estilos.COMBO_BOX_STYLESHEET.replaceAll("\n", ""));
         dialog.setScene(scene);
         dialog.showAndWait();
     }
@@ -650,16 +548,16 @@ public class SimuladorController {
         Stage dialog = createDialogStage("Microcontrolador");
 
         Label titleLabel = new Label("Controle de Microcontroladores");
-        titleLabel.setStyle(TITLE_STYLE);
+        titleLabel.setStyle(Estilos.TITLE_STYLE);
 
         VBox form = new VBox(10);
-        form.setStyle(CARD_STYLE);
+        form.setStyle(Estilos.CARD_STYLE);
 
         // Card para Ações
         VBox card1 = new VBox(10);
-        card1.setStyle(CARD_STYLE);
+        card1.setStyle(Estilos.CARD_STYLE);
         Label group1Label = new Label("Ações:");
-        group1Label.setStyle(LABEL_STYLE);
+        group1Label.setStyle(Estilos.LABEL_STYLE);
         ToggleGroup opcaoMicrocontrolador = new ToggleGroup();
         RadioButton ligar = createRadioButton("Ligar", opcaoMicrocontrolador);
         RadioButton desligar = createRadioButton("Desligar", opcaoMicrocontrolador);
@@ -670,9 +568,9 @@ public class SimuladorController {
 
         // Card para Destino
         VBox card2 = new VBox(10);
-        card2.setStyle(CARD_STYLE);
+        card2.setStyle(Estilos.CARD_STYLE);
         Label group2Label = new Label("Destino:");
-        group2Label.setStyle(LABEL_STYLE);
+        group2Label.setStyle(Estilos.LABEL_STYLE);
         ToggleGroup destinoGroup = new ToggleGroup();
         RadioButton enviarParaUm = createRadioButton("Uma Sala", destinoGroup);
         RadioButton enviarParaTodos = createRadioButton("Todas as salas", destinoGroup);
@@ -680,9 +578,9 @@ public class SimuladorController {
         group2Box.setStyle("-fx-padding: 10;");
 
         Label inputLabel = new Label("ID da sala:");
-        inputLabel.setStyle(LABEL_STYLE);
+        inputLabel.setStyle(Estilos.LABEL_STYLE);
         TextField inputField = new TextField();
-        inputField.setStyle(TEXT_FIELD_STYLE);
+        inputField.setStyle(Estilos.TEXT_FIELD_STYLE);
         inputLabel.setVisible(false);
         inputField.setVisible(false);
         destinoGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
@@ -693,9 +591,9 @@ public class SimuladorController {
         card2.getChildren().addAll(group2Label, group2Box, inputLabel, inputField);
 
         Button submit = new Button("Enviar");
-        submit.setStyle(BUTTON_STYLE);
+        submit.setStyle(Estilos.BUTTON_STYLE);
         Button cancelar = new Button("Cancelar");
-        cancelar.setStyle(CANCEL_BUTTON_STYLE);
+        cancelar.setStyle(Estilos.CANCEL_BUTTON_STYLE);
 
         submit.setOnAction(e -> {
             RadioButton opcaoSelecionada = (RadioButton) opcaoMicrocontrolador.getSelectedToggle();
@@ -757,7 +655,7 @@ public class SimuladorController {
     private RadioButton createRadioButton(String text, ToggleGroup group) {
         RadioButton rb = new RadioButton(text);
         rb.setToggleGroup(group);
-        rb.setStyle(RADIO_BUTTON_STYLE);
+        rb.setStyle(Estilos.RADIO_BUTTON_STYLE);
         return rb;
     }
 
@@ -769,7 +667,7 @@ public class SimuladorController {
     }
 
     private void styleDialog(Stage dialog, VBox container) {
-        container.setStyle(DIALOG_STYLE);
+        container.setStyle(Estilos.DIALOG_STYLE);
         dialog.setMinWidth(450);
         dialog.setMinHeight(500);
         dialog.setResizable(true);

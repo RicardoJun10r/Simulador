@@ -12,6 +12,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.control.RadioButton?>
@@ -22,14 +23,20 @@
    fx:controller="com.trabalho.controller.SimuladorController">
    <children>
       <!-- Cabeçalho -->
-      <Pane prefHeight="60.0" style="-fx-background-color: #1E1A1D;" AnchorPane.topAnchor="0.0"
-         AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+      <Pane prefHeight="60.0" style="-fx-background-color: #1E1A1D;"
+         AnchorPane.topAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
          <children>
-            <Label layoutX="20.0" layoutY="12.0" text="SmartEnvControl" textFill="#E5F2C9">
-               <font>
-                  <Font name="Roboto Bold" size="28.0" />
-               </font>
-            </Label>
+            <!-- Container horizontal para os labels do cabeçalho -->
+            <HBox layoutX="20.0" layoutY="12.0" spacing="10" alignment="CENTER_LEFT">
+               <children>
+                  <Label text="RemoteEnvControl" textFill="#E5F2C9">
+                     <font>
+                        <Font name="Roboto Bold" size="28.0" />
+                     </font>
+                  </Label>
+                  <Label fx:id="endereco_porta_lb" textFill="#E5F2C9" />
+               </children>
+            </HBox>
             <Button layoutX="800.0" layoutY="15.0" text="Ligar Servidor" onAction="#ligarServidor"
                style="-fx-background-color: #7F534B; -fx-text-fill: #E5F2C9; -fx-background-radius: 6;">
                <font>
