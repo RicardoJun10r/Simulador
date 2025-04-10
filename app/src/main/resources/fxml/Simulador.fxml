@@ -29,7 +29,7 @@
             <!-- Container horizontal para os labels do cabeçalho -->
             <HBox layoutX="20.0" layoutY="12.0" spacing="10" alignment="CENTER_LEFT">
                <children>
-                  <Label text="RemoteEnvControl" textFill="#E5F2C9">
+                  <Label text="DeviceSimControl" textFill="#E5F2C9">
                      <font>
                         <Font name="Roboto Bold" size="28.0" />
                      </font>

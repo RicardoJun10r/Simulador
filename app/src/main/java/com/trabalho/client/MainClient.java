@@ -7,9 +7,9 @@ public class MainClient {
     final static String[] TOPICOS = { "segundo", "servidor_2" };
 
     public static void main(String[] args) {
-        Sala sala = new Sala(5);
+        Sala sala = new Sala(2);
         sala.preencher();
-        new Microcontrolador("25", BROKER, sala, TOPICOS, true)
+        new Microcontrolador("12", BROKER, sala, TOPICOS, false)
                 .start();
     }
 }
